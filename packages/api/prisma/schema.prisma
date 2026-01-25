@@ -1,0 +1,353 @@
+// Prisma Schema for TakeWeb Enterprise CMS
+// Database: PostgreSQL (Neon for free tier)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ User & Auth ============
+
+enum Role {
+  ADMIN
+  EDITOR
+  AUTHOR
+  VIEWER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          Role      @default(AUTHOR)
+  avatar        String?
+  bio           String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  blogPosts     BlogPost[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ============ Blog System ============
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model BlogPost {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  excerpt     String?
+  content     String     @db.Text
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  viewCount   Int        @default(0)
+  authorId    String
+  categoryId  String?
+  
+  // SEO Fields
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  author    User      @relation(fields: [authorId], references: [id])
+  category  Category? @relation(fields: [categoryId], references: [id])
+  tags      TagsOnPosts[]
+
+  @@index([status, publishedAt])
+  @@map("blog_posts")
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  parentId    String?
+  createdAt   DateTime   @default(now())
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  posts    BlogPost[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  posts TagsOnPosts[]
+
+  @@map("tags")
+}
+
+model TagsOnPosts {
+  postId String
+  tagId  String
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("tags_on_posts")
+}
+
+// ============ Services ============
+
+model Service {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  shortDescription String
+  content         String   @db.Text
+  icon            String?
+  gradient        String?  // e.g., "from-blue-500 to-cyan-500"
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  
+  // SEO Fields
+  metaTitle       String?
+  metaDescription String?
+  
+  benefits        String[] // Array of benefit strings
+  technologies    String[] // Array of technology names
+  useCases        String[] // Array of use case descriptions
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  projects Project[]
+
+  @@map("services")
+}
+
+// ============ Projects / Case Studies ============
+
+model Project {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  client       String?
+  industry     String?
+  description  String   @db.Text
+  challenge    String?  @db.Text
+  solution     String?  @db.Text
+  outcome      String?
+  technologies String[]
+  coverImage   String?
+  isFeatured   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  serviceId    String?
+  
+  // SEO Fields
+  metaTitle       String?
+  metaDescription String?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  service Service?       @relation(fields: [serviceId], references: [id])
+  images  ProjectImage[]
+
+  @@map("projects")
+}
+
+model ProjectImage {
+  id        String  @id @default(cuid())
+  projectId String
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_images")
+}
+
+// ============ Careers ============
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+model Career {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  department   String
+  location     String
+  type         JobType  @default(FULL_TIME)
+  isRemote     Boolean  @default(false)
+  description  String   @db.Text
+  requirements String?  @db.Text
+  benefits     String[]
+  minSalary    Int?
+  maxSalary    Int?
+  deadline     DateTime?
+  isActive     Boolean  @default(true)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  applications JobApplication[]
+
+  @@map("careers")
+}
+
+model JobApplication {
+  id         String   @id @default(cuid())
+  careerId   String
+  firstName  String
+  lastName   String
+  email      String
+  phone      String?
+  resumeUrl  String?
+  coverLetter String? @db.Text
+  status     String   @default("NEW") // NEW, REVIEWING, INTERVIEWED, ACCEPTED, REJECTED
+  createdAt  DateTime @default(now())
+
+  career Career @relation(fields: [careerId], references: [id])
+
+  @@map("job_applications")
+}
+
+// ============ Testimonials ============
+
+model Testimonial {
+  id         String   @id @default(cuid())
+  name       String
+  position   String?
+  company    String?
+  content    String   @db.Text
+  avatar     String?
+  rating     Int?     @default(5)
+  isApproved Boolean  @default(false)
+  isFeatured Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@map("testimonials")
+}
+
+// ============ Team ============
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  name        String
+  position    String
+  department  String?
+  bio         String?  @db.Text
+  photo       String?
+  linkedin    String?
+  twitter     String?
+  email       String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("team_members")
+}
+
+// ============ Contact Submissions ============
+
+enum ContactStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+model ContactSubmission {
+  id        String        @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  company   String?
+  service   String?
+  message   String        @db.Text
+  status    ContactStatus @default(NEW)
+  notes     String?       @db.Text
+  createdAt DateTime      @default(now())
+
+  @@map("contact_submissions")
+}
+
+// ============ Media Library ============
+
+model Media {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  url          String
+  cloudinaryId String?
+  mimeType     String
+  fileSize     Int
+  width        Int?
+  height       Int?
+  alt          String?
+  folder       String?
+  createdAt    DateTime @default(now())
+
+  @@map("media")
+}
+
+// ============ Site Settings ============
+
+model SiteSetting {
+  key         String   @id
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ============ Newsletter ============
+
+model NewsletterSubscriber {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  isActive    Boolean  @default(true)
+  subscribedAt DateTime @default(now())
+  unsubscribedAt DateTime?
+
+  @@map("newsletter_subscribers")
+}
