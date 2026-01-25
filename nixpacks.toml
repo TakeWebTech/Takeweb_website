@@ -1,0 +1,14 @@
+# Nixpacks configuration for Railway deployment
+# https://nixpacks.com/docs/configuration/file
+
+[phases.setup]
+nixPkgs = ["nodejs_18", "pnpm"]
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm build --filter @takeweb/web"]
+
+[start]
+cmd = "cd apps/web && pnpm start"
