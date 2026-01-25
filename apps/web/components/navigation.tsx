@@ -162,8 +162,8 @@ export function Navigation() {
     return (
         <header
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-                    ? "py-2 bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[var(--border-primary)] shadow-lg"
-                    : "py-4 bg-transparent"
+                ? "py-2 bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[var(--border-primary)] shadow-lg"
+                : "py-4 bg-transparent"
                 }`}
         >
             <nav className="container-main">
@@ -388,7 +388,14 @@ export function Navigation() {
 }
 
 // Mega Menu Component
-function MegaMenu({ data, onClose }: { data: typeof megaMenuData.products; onClose: () => void }) {
+function MegaMenu({ data, onClose }: {
+    data: {
+        title: string;
+        sections?: { title: string; items: { name: string; href: string; desc?: string }[] }[];
+        featured?: { name: string; desc: string; href: string };
+    };
+    onClose: () => void
+}) {
     return (
         <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[700px] animate-fade-in">
             <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl overflow-hidden">
