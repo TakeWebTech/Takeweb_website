@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Enable static exports for better performance
+    // Enable standalone output for Railway/Docker deployment
     output: 'standalone',
 
     // Image optimization
@@ -16,6 +16,11 @@ const nextConfig = {
                 hostname: 'images.unsplash.com',
                 pathname: '/**',
             },
+            {
+                protocol: 'https',
+                hostname: '**.railway.app',
+                pathname: '/**',
+            },
         ],
     },
 
@@ -26,6 +31,22 @@ const nextConfig = {
 
     // Compression
     compress: true,
+
+    // Environment variables available at build time
+    env: {
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002',
+    },
+
+    // API rewrites for development (proxies /api/* to backend)
+    async rewrites() {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
+        return [
+            {
+                source: '/api/:path*',
+                destination: `${apiUrl}/:path*`,
+            },
+        ];
+    },
 
     // Headers for security
     async headers() {
