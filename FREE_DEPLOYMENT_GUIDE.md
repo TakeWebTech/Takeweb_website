@@ -64,6 +64,9 @@ Deploy your entire TakeWeb monorepo for **$0/month** using:
 ```
 postgresql://username:password@ep-xxx.us-east-2.aws.neon.tech/takeweb?sslmode=require
 ```
+DATABASE_URL="postgresql://neondb_owner:npg_eD9dqcw2ChmX@ep-weathered-mountain-a1lgyziu-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+# uncomment next line if you use Prisma <5.10
+# DATABASE_URL_UNPOOLED="postgresql://neondb_owner:npg_eD9dqcw2ChmX@ep-weathered-mountain-a1lgyziu.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 **⚠️ Save this! You'll need it for the API deployment.**
 
@@ -112,8 +115,8 @@ npx prisma db seed
 | **Branch** | `main` |
 | **Root Directory** | `packages/api` |
 | **Runtime** | `Node` |
-| **Build Command** | `npm install && npx prisma generate && npm run build` |
-| **Start Command** | `npm run start:prod` |
+| **Build Command** | `npm install --include=dev && npx prisma generate && npx nest build` |
+| **Start Command** | `node dist/main` |
 | **Plan** | `Free` |
 
 ### 2.4 Add Environment Variables
