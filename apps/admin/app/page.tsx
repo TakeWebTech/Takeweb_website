@@ -483,12 +483,12 @@ export default function LoginPage() {
                             key={currentSlide}
                             className="animate-fade-in-up"
                         >
-                            <div className="text-4xl mb-4">{infoSlides[currentSlide].icon}</div>
+                            <div className="text-4xl mb-4">{infoSlides[currentSlide]?.icon}</div>
                             <h3 className="text-2xl font-bold text-white mb-3">
-                                {infoSlides[currentSlide].title}
+                                {infoSlides[currentSlide]?.title}
                             </h3>
                             <p className="text-white/90 leading-relaxed">
-                                {infoSlides[currentSlide].description}
+                                {infoSlides[currentSlide]?.description}
                             </p>
                         </div>
 
