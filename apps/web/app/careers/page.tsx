@@ -39,11 +39,13 @@ interface Job {
     department: string;
     location: string;
     type: string;
-    salary: string;
-    experience: string;
+    minSalary?: number;
+    maxSalary?: number;
     description: string;
-    requirements: string[];
-    benefits: string[];
+    requirements?: string;
+    benefits?: string[];
+    deadline?: string;
+    isRemote: boolean;
     isActive: boolean;
 }
 
@@ -334,10 +336,11 @@ export default function CareersPage() {
                                             <MapPin size={14} />
                                             {position.location}
                                         </span>
-                                        <span className="flex items-center gap-1">
-                                            <Clock size={14} />
-                                            {position.experience}
-                                        </span>
+                                        {(position.minSalary || position.maxSalary) && (
+                                            <span className="flex items-center gap-1">
+                                                ₹{position.minSalary && position.maxSalary ? `${position.minSalary}L - ₹${position.maxSalary}L` : position.minSalary ? `${position.minSalary}L+` : `Up to ₹${position.maxSalary}L`}
+                                            </span>
+                                        )}
                                     </div>
                                 </Card3D>
                             </div>
@@ -391,15 +394,21 @@ export default function CareersPage() {
                                 <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--text-tertiary)]">
                                     <span className="flex items-center gap-1"><Briefcase size={14} /> {selectedJob.department}</span>
                                     <span className="flex items-center gap-1"><MapPin size={14} /> {selectedJob.location}</span>
-                                    <span className="flex items-center gap-1"><Clock size={14} /> {selectedJob.experience}</span>
+                                    {selectedJob.isRemote && (
+                                        <span className="px-2 py-1 text-xs bg-emerald-500/10 text-emerald-500 rounded-full">Remote</span>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Salary */}
-                            <div className="p-4 bg-amber-500/10 rounded-xl mb-6">
-                                <div className="text-sm text-amber-500 font-medium">Compensation</div>
-                                <div className="text-xl font-bold text-[var(--text-primary)]">{selectedJob.salary}</div>
-                            </div>
+                            {(selectedJob.minSalary || selectedJob.maxSalary) && (
+                                <div className="p-4 bg-amber-500/10 rounded-xl mb-6">
+                                    <div className="text-sm text-amber-500 font-medium">Compensation</div>
+                                    <div className="text-xl font-bold text-[var(--text-primary)]">
+                                        ₹{selectedJob.minSalary && selectedJob.maxSalary ? `${selectedJob.minSalary}L - ₹${selectedJob.maxSalary}L` : selectedJob.minSalary ? `${selectedJob.minSalary}L+` : `Up to ₹${selectedJob.maxSalary}L`}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Description */}
                             <div className="mb-6">
@@ -408,14 +417,14 @@ export default function CareersPage() {
                             </div>
 
                             {/* Requirements */}
-                            {selectedJob.requirements && selectedJob.requirements.length > 0 && (
+                            {selectedJob.requirements && selectedJob.requirements.trim() && (
                                 <div className="mb-6">
                                     <h3 className="font-semibold text-[var(--text-primary)] mb-3">Requirements</h3>
                                     <ul className="space-y-2">
-                                        {selectedJob.requirements.map((req, i) => (
+                                        {selectedJob.requirements.split('\n').filter(r => r.trim()).map((req, i) => (
                                             <li key={i} className="flex items-start gap-2 text-[var(--text-tertiary)]">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
-                                                {req}
+                                                {req.trim()}
                                             </li>
                                         ))}
                                     </ul>
