@@ -3,17 +3,17 @@
 
 /* ===== Design Tokens ===== */
 @theme {
-    /* Primary Brand Colors */
-    --color-primary-50: oklch(97% 0.01 250);
-    --color-primary-100: oklch(94% 0.02 250);
-    --color-primary-400: oklch(68% 0.12 250);
-    --color-primary-500: oklch(55% 0.18 250);
-    --color-primary-600: oklch(48% 0.18 250);
-    --color-primary-700: oklch(40% 0.16 250);
+    /* Primary Brand Colors - Gold Theme #b39b5e */
+    --color-primary-50: oklch(95% 0.03 85);
+    --color-primary-100: oklch(90% 0.05 85);
+    --color-primary-400: oklch(72% 0.10 85);
+    --color-primary-500: oklch(65% 0.12 85);
+    --color-primary-600: oklch(58% 0.12 85);
+    --color-primary-700: oklch(50% 0.10 85);
 
-    /* Accent Colors */
-    --color-accent-400: oklch(75% 0.15 195);
-    --color-accent-500: oklch(65% 0.18 195);
+    /* Accent Colors - Lighter Gold */
+    --color-accent-400: oklch(78% 0.10 85);
+    --color-accent-500: oklch(70% 0.12 85);
 
     /* Dark Theme */
     --color-dark-900: oklch(12% 0.02 250);
@@ -317,6 +317,61 @@
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 500;
-    background-color: oklch(55% 0.18 250 / 0.1);
+    background-color: oklch(65% 0.12 85 / 0.1);
     color: var(--color-primary-400);
+}
+
+/* ===== Toast Animation ===== */
+@keyframes slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+}
+
+/* ===== Loading Skeleton ===== */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--color-dark-700) 25%,
+            var(--color-dark-600) 50%,
+            var(--color-dark-700) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 0.5rem;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--color-neutral-400);
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
 }
