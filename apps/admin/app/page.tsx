@@ -36,6 +36,8 @@ export default function LoginPage() {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -95,6 +97,26 @@ export default function LoginPage() {
         }
     };
 
+    // Password visibility toggle component
+    const PasswordToggle = ({ show, onToggle }: { show: boolean; onToggle: () => void }) => (
+        <button
+            type="button"
+            onClick={onToggle}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+        >
+            {show ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+            ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+            )}
+        </button>
+    );
+
     return (
         <div className="min-h-screen flex overflow-hidden">
             {/* Left Side - Form */}
@@ -111,7 +133,7 @@ export default function LoginPage() {
                                 priority
                             />
                         </div>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                        <span className="text-2xl font-bold" style={{ color: '#b39b5e' }}>
                             TakeWeb
                         </span>
                     </div>
@@ -152,7 +174,8 @@ export default function LoginPage() {
                                             onChange={(e) => setFirstName(e.target.value)}
                                             placeholder="John"
                                             required={!isLogin}
-                                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                                            style={{ '--tw-ring-color': '#b39b5e' } as React.CSSProperties}
                                         />
                                     </div>
                                 </div>
@@ -170,7 +193,8 @@ export default function LoginPage() {
                                             onChange={(e) => setLastName(e.target.value)}
                                             placeholder="Doe"
                                             required={!isLogin}
-                                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                                            style={{ '--tw-ring-color': '#b39b5e' } as React.CSSProperties}
                                         />
                                     </div>
                                 </div>
@@ -192,7 +216,8 @@ export default function LoginPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="admin@takeweb.in"
                                     required
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                                    style={{ '--tw-ring-color': '#b39b5e' } as React.CSSProperties}
                                 />
                             </div>
                         </div>
@@ -207,13 +232,15 @@ export default function LoginPage() {
                                     🔒
                                 </span>
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
                                     required
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                                    className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                                    style={{ '--tw-ring-color': '#b39b5e' } as React.CSSProperties}
                                 />
+                                <PasswordToggle show={showPassword} onToggle={() => setShowPassword(!showPassword)} />
                             </div>
                         </div>
 
@@ -228,13 +255,15 @@ export default function LoginPage() {
                                         🔒
                                     </span>
                                     <input
-                                        type="password"
+                                        type={showConfirmPassword ? "text" : "password"}
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         placeholder="••••••••"
                                         required={!isLogin}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                                        className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                                        style={{ '--tw-ring-color': '#b39b5e' } as React.CSSProperties}
                                     />
+                                    <PasswordToggle show={showConfirmPassword} onToggle={() => setShowConfirmPassword(!showConfirmPassword)} />
                                 </div>
                             </div>
                         )}
@@ -243,7 +272,11 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl hover:from-violet-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25"
+                            className="w-full py-3.5 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                            style={{
+                                background: 'linear-gradient(135deg, #b39b5e 0%, #d4b86a 50%, #b39b5e 100%)',
+                                boxShadow: '0 10px 30px -10px rgba(179, 155, 94, 0.4)'
+                            }}
                         >
                             {loading ? "Please wait..." : isLogin ? "Login Now" : "Create Account"}
                         </button>
@@ -305,7 +338,8 @@ export default function LoginPage() {
                                 setIsLogin(!isLogin);
                                 setError("");
                             }}
-                            className="text-violet-600 font-semibold hover:text-violet-700 transition-colors"
+                            className="font-semibold transition-colors"
+                            style={{ color: '#b39b5e' }}
                         >
                             {isLogin ? "Sign Up" : "Login"}
                         </button>
@@ -313,8 +347,8 @@ export default function LoginPage() {
 
                     {/* Demo Credentials */}
                     {isLogin && (
-                        <div className="mt-6 p-4 bg-violet-50 rounded-xl border border-violet-100">
-                            <p className="text-sm text-violet-700 text-center">
+                        <div className="mt-6 p-4 rounded-xl border" style={{ backgroundColor: 'rgba(179, 155, 94, 0.1)', borderColor: 'rgba(179, 155, 94, 0.2)' }}>
+                            <p className="text-sm text-center" style={{ color: '#8a7a4a' }}>
                                 <strong>Demo:</strong> admin@takeweb.in / password123
                             </p>
                         </div>
@@ -323,42 +357,57 @@ export default function LoginPage() {
             </div>
 
             {/* Right Side - Visual */}
-            <div className="hidden lg:flex w-1/2 relative bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 overflow-hidden">
+            <div className="hidden lg:flex w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #b39b5e 0%, #d4b86a 30%, #c9a85c 60%, #a08a50 100%)' }}>
                 {/* Animated Background Balls */}
                 <div className="absolute inset-0">
                     {/* Large Ball - Top Left */}
                     <div
-                        className="absolute w-64 h-64 rounded-full bg-violet-400/30 blur-sm animate-float"
+                        className="absolute w-64 h-64 rounded-full animate-float"
                         style={{
                             top: "-5%",
                             left: "-5%",
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            backdropFilter: 'blur(2px)',
                             animationDuration: "8s",
                         }}
                     />
                     {/* Medium Ball - Bottom Right */}
                     <div
-                        className="absolute w-48 h-48 rounded-full bg-purple-400/20 blur-sm animate-float-reverse"
+                        className="absolute w-48 h-48 rounded-full animate-float-reverse"
                         style={{
                             bottom: "-10%",
                             right: "-5%",
+                            background: 'rgba(255, 255, 255, 0.1)',
                             animationDuration: "10s",
                         }}
                     />
-                    {/* Small Ball - Center */}
+                    {/* Small Ball - Center Left */}
                     <div
-                        className="absolute w-20 h-20 rounded-full bg-white/10 animate-pulse-slow"
+                        className="absolute w-20 h-20 rounded-full animate-pulse-slow"
                         style={{
                             top: "40%",
-                            left: "20%",
+                            left: "15%",
+                            background: 'rgba(255, 255, 255, 0.2)',
                         }}
                     />
-                    {/* Extra Small Ball */}
+                    {/* Extra Small Ball - Right */}
                     <div
-                        className="absolute w-10 h-10 rounded-full bg-white/20 animate-float"
+                        className="absolute w-12 h-12 rounded-full animate-float"
                         style={{
-                            top: "60%",
-                            right: "30%",
+                            top: "25%",
+                            right: "20%",
+                            background: 'rgba(255, 255, 255, 0.25)',
                             animationDuration: "6s",
+                        }}
+                    />
+                    {/* Another Small Ball */}
+                    <div
+                        className="absolute w-16 h-16 rounded-full animate-float-reverse"
+                        style={{
+                            bottom: "30%",
+                            left: "25%",
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            animationDuration: "7s",
                         }}
                     />
                     {/* Wavy Lines Background Pattern */}
@@ -390,31 +439,46 @@ export default function LoginPage() {
 
                 {/* Content Container */}
                 <div className="relative z-10 flex flex-col items-center justify-center w-full p-12">
-                    {/* Illustration Area */}
+                    {/* Illustration Area with Glass Card */}
                     <div className="relative mb-8">
-                        {/* Glass Card Behind */}
-                        <div className="absolute -inset-4 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20" />
+                        {/* Glass Card Behind - More transparent for readability */}
+                        <div
+                            className="absolute -inset-8 rounded-3xl border border-white/30"
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.15)',
+                                backdropFilter: 'blur(10px)',
+                            }}
+                        />
 
                         {/* Image Placeholder - Woman with Tablet */}
                         <div className="relative w-72 h-80 flex items-center justify-center">
-                            <div className="w-full h-full bg-gradient-to-br from-white/20 to-white/5 rounded-2xl flex items-center justify-center">
+                            <div
+                                className="w-full h-full rounded-2xl flex items-center justify-center"
+                                style={{ background: 'rgba(255, 255, 255, 0.1)' }}
+                            >
                                 <div className="text-center">
                                     <div className="text-6xl mb-4">👩‍💼</div>
-                                    <p className="text-white/70 text-sm">Admin Dashboard</p>
+                                    <p className="text-white/90 text-sm font-medium">Admin Dashboard</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Floating Badge */}
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-full p-3 shadow-xl">
-                            <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center text-white text-lg">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-lg" style={{ background: 'linear-gradient(135deg, #b39b5e, #d4b86a)' }}>
                                 ⚡
                             </div>
                         </div>
                     </div>
 
-                    {/* Rotating Info */}
-                    <div className="text-center max-w-sm mt-8">
+                    {/* Rotating Info with Transparent Card */}
+                    <div
+                        className="text-center max-w-md mt-8 p-8 rounded-2xl border border-white/20"
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            backdropFilter: 'blur(10px)',
+                        }}
+                    >
                         <div
                             key={currentSlide}
                             className="animate-fade-in-up"
@@ -423,21 +487,22 @@ export default function LoginPage() {
                             <h3 className="text-2xl font-bold text-white mb-3">
                                 {infoSlides[currentSlide].title}
                             </h3>
-                            <p className="text-white/80 leading-relaxed">
+                            <p className="text-white/90 leading-relaxed">
                                 {infoSlides[currentSlide].description}
                             </p>
                         </div>
 
                         {/* Slide Indicators */}
-                        <div className="flex justify-center gap-2 mt-8">
+                        <div className="flex justify-center gap-2 mt-6">
                             {infoSlides.map((_, index) => (
                                 <button
                                     key={index}
                                     onClick={() => setCurrentSlide(index)}
-                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
-                                            ? "w-8 bg-white"
-                                            : "bg-white/40 hover:bg-white/60"
-                                        }`}
+                                    className="h-2 rounded-full transition-all duration-300"
+                                    style={{
+                                        width: index === currentSlide ? '2rem' : '0.5rem',
+                                        background: index === currentSlide ? 'white' : 'rgba(255, 255, 255, 0.4)',
+                                    }}
                                 />
                             ))}
                         </div>
@@ -445,7 +510,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Decorative Gradient Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/10 to-transparent" />
             </div>
 
             {/* Custom Styles */}
