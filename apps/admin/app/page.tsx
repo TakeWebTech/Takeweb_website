@@ -65,8 +65,11 @@ export default function LoginPage() {
                 ? { email, password }
                 : { email, password, firstName, lastName };
 
+            // Remove trailing slash from API URL to prevent double slashes
+            const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, '');
+
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}${endpoint}`,
+                `${apiUrl}${endpoint}`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
