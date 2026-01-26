@@ -10,56 +10,42 @@ export const metadata: Metadata = {
     description: "Comprehensive enterprise IT solutions including software development, cloud services, AI integration, cybersecurity, and digital transformation.",
 };
 
-const services = [
-    {
-        icon: Code,
-        title: "Enterprise Software Development",
-        description: "Custom software solutions engineered for complex enterprise challenges. From legacy modernization to greenfield development, we build scalable, secure, and maintainable systems.",
-        href: "/services/enterprise-software",
-        gradient: "from-blue-500 to-cyan-500",
-        features: ["Custom Applications", "API Development", "System Integration", "Legacy Modernization"],
-    },
-    {
-        icon: Cloud,
-        title: "Cloud & DevOps Solutions",
-        description: "Accelerate your cloud journey with our comprehensive cloud services. We help you migrate, optimize, and manage your cloud infrastructure for maximum efficiency.",
-        href: "/services/cloud-devops",
-        gradient: "from-violet-500 to-purple-500",
-        features: ["Cloud Migration", "Infrastructure as Code", "CI/CD Pipelines", "Container Orchestration"],
-    },
-    {
-        icon: Cpu,
-        title: "AI & Data Engineering",
-        description: "Unlock the power of your data with intelligent solutions. We build AI/ML models, data pipelines, and analytics platforms that drive informed decision-making.",
-        href: "/services/ai-data",
-        gradient: "from-amber-500 to-orange-500",
-        features: ["Machine Learning", "Data Pipelines", "Predictive Analytics", "Computer Vision"],
-    },
-    {
-        icon: Shield,
-        title: "Cybersecurity & Compliance",
-        description: "Protect your digital assets with enterprise-grade security. Our comprehensive security solutions ensure your systems are secure and compliant with industry standards.",
-        href: "/services/cybersecurity",
-        gradient: "from-rose-500 to-pink-500",
-        features: ["Security Audits", "Penetration Testing", "Compliance (GDPR, SOC2)", "Incident Response"],
-    },
-    {
-        icon: Smartphone,
-        title: "Web & Mobile Development",
-        description: "Create exceptional digital experiences across all platforms. We build responsive web applications and native mobile apps that users love.",
-        href: "/services/web-mobile",
-        gradient: "from-emerald-500 to-teal-500",
-        features: ["Web Applications", "iOS & Android Apps", "Progressive Web Apps", "Cross-Platform Development"],
-    },
-    {
-        icon: BarChart3,
-        title: "IT Consulting & Strategy",
-        description: "Navigate your digital transformation with expert guidance. Our consultants help you define strategy, optimize operations, and implement best practices.",
-        href: "/services/it-consulting",
-        gradient: "from-indigo-500 to-blue-500",
-        features: ["Digital Strategy", "Technology Roadmaps", "Process Optimization", "Change Management"],
-    },
-];
+// Icon mapping for services
+const iconMap: Record<string, any> = {
+    code: Code,
+    cloud: Cloud,
+    shield: Shield,
+    cpu: Cpu,
+    smartphone: Smartphone,
+    chart: BarChart3,
+};
+
+interface Service {
+    id: string;
+    title: string;
+    slug: string;
+    shortDescription: string;
+    description: string;
+    icon: string;
+    features: string[];
+    sortOrder: number;
+    isActive: boolean;
+}
+
+async function getServices(): Promise<Service[]> {
+    try {
+        const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/services`,
+            { next: { revalidate: 3600 } }
+        );
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.filter((s: Service) => s.isActive).sort((a: Service, b: Service) => a.sortOrder - b.sortOrder);
+    } catch (error) {
+        console.error('Failed to fetch services:', error);
+        return [];
+    }
+}
 
 const process = [
     {
@@ -89,7 +75,18 @@ const process = [
     },
 ];
 
-export default function ServicesPage() {
+const gradients = [
+    "from-blue-500 to-cyan-500",
+    "from-violet-500 to-purple-500",
+    "from-amber-500 to-orange-500",
+    "from-rose-500 to-pink-500",
+    "from-emerald-500 to-teal-500",
+    "from-indigo-500 to-blue-500",
+];
+
+export default async function ServicesPage() {
+    const services = await getServices();
+
     return (
         <>
             {/* Hero Section */}
@@ -116,38 +113,51 @@ export default function ServicesPage() {
             {/* Services Grid */}
             <section className="section-padding">
                 <div className="container-main">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {services.map((service, index) => (
-                            <Link key={index} href={service.href}>
-                                <Card3D className="h-full group cursor-pointer">
-                                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${service.gradient} flex items-center justify-center mb-6`}>
-                                        <service.icon className="text-white" size={28} />
-                                    </div>
+                    {services.length === 0 ? (
+                        <div className="text-center py-16">
+                            <p className="text-[var(--text-tertiary)]">Our services will be available soon.</p>
+                        </div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {services.map((service, index) => {
+                                const IconComponent = iconMap[service.icon?.toLowerCase()] || Code;
+                                const gradient = gradients[index % gradients.length];
 
-                                    <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-3 group-hover:text-primary-500 transition-colors">
-                                        {service.title}
-                                    </h3>
+                                return (
+                                    <Link key={service.id} href={`/services/${service.slug}`}>
+                                        <Card3D className="h-full group cursor-pointer">
+                                            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-6`}>
+                                                <IconComponent className="text-white" size={28} />
+                                            </div>
 
-                                    <p className="text-[var(--text-tertiary)] mb-6">
-                                        {service.description}
-                                    </p>
+                                            <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-3 group-hover:text-primary-500 transition-colors">
+                                                {service.title}
+                                            </h3>
 
-                                    <ul className="space-y-2 mb-6">
-                                        {service.features.map((feature, i) => (
-                                            <li key={i} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                                                <Check size={14} className="text-primary-500" />
-                                                {feature}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                            <p className="text-[var(--text-tertiary)] mb-6">
+                                                {service.shortDescription || service.description}
+                                            </p>
 
-                                    <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-500 group-hover:gap-2 transition-all">
-                                        Learn more <ArrowRight size={14} />
-                                    </span>
-                                </Card3D>
-                            </Link>
-                        ))}
-                    </div>
+                                            {service.features && service.features.length > 0 && (
+                                                <ul className="space-y-2 mb-6">
+                                                    {service.features.slice(0, 4).map((feature, i) => (
+                                                        <li key={i} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                                                            <Check size={14} className="text-primary-500 flex-shrink-0" />
+                                                            {feature}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+
+                                            <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-500 group-hover:gap-2 transition-all">
+                                                Learn more <ArrowRight size={14} />
+                                            </span>
+                                        </Card3D>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </section>
 

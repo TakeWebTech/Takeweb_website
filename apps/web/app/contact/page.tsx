@@ -1,13 +1,10 @@
-import { Metadata } from "next";
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { FloatingElements } from "@/components/floating-elements";
 import { Card3D } from "@/components/ui/card-3d";
 import { Mail, Phone, MapPin, Clock, Send, Calendar } from "lucide-react";
-
-export const metadata: Metadata = {
-    title: "Contact",
-    description: "Get in touch with TakeWeb Enterprise. Let's discuss how we can help transform your business with our IT solutions.",
-};
 
 const contactInfo = [
     {
@@ -37,6 +34,52 @@ const contactInfo = [
 ];
 
 export default function ContactPage() {
+    const [formData, setFormData] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        company: "",
+        service: "",
+        message: "",
+    });
+    const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setStatus(null);
+
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/contact`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: `${formData.firstName} ${formData.lastName}`,
+                    email: formData.email,
+                    company: formData.company,
+                    subject: formData.service || "General Inquiry",
+                    message: formData.message,
+                }),
+            });
+
+            if (res.ok) {
+                setStatus({ type: "success", message: "Thank you! We'll get back to you soon." });
+                setFormData({ firstName: "", lastName: "", email: "", company: "", service: "", message: "" });
+            } else {
+                setStatus({ type: "error", message: "Failed to send message. Please try again." });
+            }
+        } catch (error) {
+            setStatus({ type: "error", message: "Something went wrong. Please try again." });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <>
             {/* Hero Section */}
@@ -70,7 +113,13 @@ export default function ContactPage() {
                                 Send Us a Message
                             </h2>
 
-                            <form className="space-y-6">
+                            {status && (
+                                <div className={`mb-6 p-4 rounded-xl ${status.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                    {status.message}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid sm:grid-cols-2 gap-6">
                                     <div>
                                         <label htmlFor="firstName" className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
@@ -80,6 +129,8 @@ export default function ContactPage() {
                                             type="text"
                                             id="firstName"
                                             name="firstName"
+                                            value={formData.firstName}
+                                            onChange={handleChange}
                                             required
                                             className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors"
                                             placeholder="John"
@@ -93,6 +144,8 @@ export default function ContactPage() {
                                             type="text"
                                             id="lastName"
                                             name="lastName"
+                                            value={formData.lastName}
+                                            onChange={handleChange}
                                             required
                                             className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors"
                                             placeholder="Doe"
@@ -108,6 +161,8 @@ export default function ContactPage() {
                                         type="email"
                                         id="email"
                                         name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
                                         required
                                         className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors"
                                         placeholder="john@company.com"
@@ -122,6 +177,8 @@ export default function ContactPage() {
                                         type="text"
                                         id="company"
                                         name="company"
+                                        value={formData.company}
+                                        onChange={handleChange}
                                         className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors"
                                         placeholder="Your Company"
                                     />
@@ -134,6 +191,8 @@ export default function ContactPage() {
                                     <select
                                         id="service"
                                         name="service"
+                                        value={formData.service}
+                                        onChange={handleChange}
                                         className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors"
                                     >
                                         <option value="">Select a service</option>
@@ -153,6 +212,8 @@ export default function ContactPage() {
                                     <textarea
                                         id="message"
                                         name="message"
+                                        value={formData.message}
+                                        onChange={handleChange}
                                         rows={5}
                                         required
                                         className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors resize-none"
@@ -162,10 +223,11 @@ export default function ContactPage() {
 
                                 <button
                                     type="submit"
-                                    className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 text-white font-semibold bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl hover:shadow-[0_0_40px_-10px_oklch(55%_0.18_250_/_0.5)] hover:-translate-y-0.5 transition-all"
+                                    disabled={loading}
+                                    className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 text-white font-semibold bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl hover:shadow-[0_0_40px_-10px_oklch(55%_0.18_250_/_0.5)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Send size={18} />
-                                    Send Message
+                                    {loading ? "Sending..." : "Send Message"}
                                 </button>
                             </form>
                         </Card3D>

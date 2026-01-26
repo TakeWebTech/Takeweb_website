@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { FloatingElements } from "@/components/floating-elements";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -24,144 +24,28 @@ const departments = ["All", "Engineering", "Product", "Design", "Data Science", 
 const locations = ["All", "Remote", "Bangalore", "Mumbai", "Delhi", "Hybrid"];
 const types = ["All", "Full-time", "Part-time", "Contract", "Internship"];
 
-const openPositions = [
-    {
-        id: "senior-fullstack-1",
-        title: "Senior Full-Stack Engineer",
-        department: "Engineering",
-        location: "Remote / Bangalore",
-        type: "Full-time",
-        salary: "₹25L - ₹40L",
-        experience: "5+ years",
-        description: "Build scalable enterprise applications using React, Node.js, and cloud technologies.",
-        requirements: [
-            "5+ years of experience with React, Node.js, or similar",
-            "Strong understanding of microservices architecture",
-            "Experience with cloud platforms (AWS/Azure/GCP)",
-            "Excellent problem-solving skills",
-        ],
-        skills: ["React", "Node.js", "TypeScript", "AWS", "PostgreSQL"],
-    },
-    {
-        id: "devops-engineer-1",
-        title: "DevOps Engineer",
-        department: "Infrastructure",
-        location: "Remote / Bangalore",
-        type: "Full-time",
-        salary: "₹20L - ₹35L",
-        experience: "4+ years",
-        description: "Design and manage CI/CD pipelines, Kubernetes clusters, and cloud infrastructure.",
-        requirements: [
-            "4+ years of DevOps/SRE experience",
-            "Strong Kubernetes and Docker expertise",
-            "Experience with Terraform and IaC",
-            "Knowledge of monitoring and observability tools",
-        ],
-        skills: ["Kubernetes", "Docker", "Terraform", "AWS", "CI/CD"],
-    },
-    {
-        id: "ai-ml-engineer-1",
-        title: "AI/ML Engineer",
-        department: "Data Science",
-        location: "Remote",
-        type: "Full-time",
-        salary: "₹22L - ₹38L",
-        experience: "3+ years",
-        description: "Develop machine learning models and AI solutions for enterprise clients.",
-        requirements: [
-            "3+ years of ML/AI experience",
-            "Proficiency in Python and ML frameworks",
-            "Experience with NLP or Computer Vision",
-            "Strong mathematical foundations",
-        ],
-        skills: ["Python", "TensorFlow", "PyTorch", "NLP", "MLOps"],
-    },
-    {
-        id: "product-designer-1",
-        title: "Senior Product Designer",
-        department: "Design",
-        location: "Bangalore",
-        type: "Full-time",
-        salary: "₹18L - ₹30L",
-        experience: "4+ years",
-        description: "Create beautiful, intuitive interfaces for enterprise products.",
-        requirements: [
-            "4+ years of product design experience",
-            "Strong portfolio of B2B/SaaS products",
-            "Proficiency in Figma and design systems",
-            "Experience with user research",
-        ],
-        skills: ["Figma", "Design Systems", "User Research", "Prototyping"],
-    },
-    {
-        id: "tech-pm-1",
-        title: "Technical Project Manager",
-        department: "Product",
-        location: "Bangalore",
-        type: "Full-time",
-        salary: "₹20L - ₹32L",
-        experience: "5+ years",
-        description: "Lead cross-functional teams to deliver complex enterprise projects.",
-        requirements: [
-            "5+ years of project management experience",
-            "Technical background in software development",
-            "Experience with Agile/Scrum methodologies",
-            "Excellent stakeholder management skills",
-        ],
-        skills: ["Agile", "Scrum", "JIRA", "Technical Planning", "Stakeholder Management"],
-    },
-    {
-        id: "frontend-intern-1",
-        title: "Frontend Development Intern",
-        department: "Engineering",
-        location: "Remote",
-        type: "Internship",
-        salary: "₹30K - ₹50K/month",
-        experience: "0-1 years",
-        description: "Learn and grow with our engineering team building modern web applications.",
-        requirements: [
-            "Currently pursuing or recently completed CS degree",
-            "Basic knowledge of React or similar frameworks",
-            "Eagerness to learn and grow",
-            "Good communication skills",
-        ],
-        skills: ["React", "JavaScript", "HTML/CSS", "Git"],
-    },
-    {
-        id: "backend-engineer-1",
-        title: "Backend Engineer",
-        department: "Engineering",
-        location: "Remote / Mumbai",
-        type: "Full-time",
-        salary: "₹18L - ₹28L",
-        experience: "3+ years",
-        description: "Build robust backend services and APIs for enterprise applications.",
-        requirements: [
-            "3+ years of backend development experience",
-            "Strong with Node.js, Java, or Go",
-            "Database design and optimization skills",
-            "API design best practices",
-        ],
-        skills: ["Node.js", "PostgreSQL", "Redis", "Docker", "REST APIs"],
-    },
-    {
-        id: "sales-exec-1",
-        title: "Enterprise Sales Executive",
-        department: "Sales",
-        location: "Bangalore / Delhi",
-        type: "Full-time",
-        salary: "₹15L - ₹25L + Commission",
-        experience: "5+ years",
-        description: "Drive enterprise sales and build relationships with key accounts.",
-        requirements: [
-            "5+ years of B2B technology sales",
-            "Track record of closing enterprise deals",
-            "Strong network in target industries",
-            "Excellent presentation skills",
-        ],
-        skills: ["Enterprise Sales", "Solution Selling", "CRM", "Negotiation"],
-    },
-];
+// Job type mapping
+const typeLabels: Record<string, string> = {
+    FULL_TIME: "Full-time",
+    PART_TIME: "Part-time",
+    CONTRACT: "Contract",
+    INTERNSHIP: "Internship",
+};
+
+interface Job {
+    id: string;
+    title: string;
+    slug: string;
+    department: string;
+    location: string;
+    type: string;
+    salary: string;
+    experience: string;
+    description: string;
+    requirements: string[];
+    benefits: string[];
+    isActive: boolean;
+}
 
 const culture = [
     { icon: Zap, title: "Move Fast", description: "We ship quickly and iterate often." },
@@ -170,27 +54,46 @@ const culture = [
 ];
 
 export default function CareersPage() {
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedDepartment, setSelectedDepartment] = useState("All");
     const [selectedLocation, setSelectedLocation] = useState("All");
     const [selectedType, setSelectedType] = useState("All");
-    const [selectedJob, setSelectedJob] = useState<typeof openPositions[0] | null>(null);
+    const [selectedJob, setSelectedJob] = useState<Job | null>(null);
     const [showFilters, setShowFilters] = useState(false);
 
+    // Fetch jobs from API
+    useEffect(() => {
+        const fetchJobs = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/careers`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setJobs(data.filter((job: Job) => job.isActive));
+                }
+            } catch (error) {
+                console.error('Failed to fetch jobs:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchJobs();
+    }, []);
+
     const filteredPositions = useMemo(() => {
-        return openPositions.filter((job) => {
+        return jobs.filter((job) => {
             const matchesSearch = searchQuery === "" ||
                 job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.skills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase()));
+                job.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
             const matchesDepartment = selectedDepartment === "All" || job.department === selectedDepartment;
-            const matchesLocation = selectedLocation === "All" || job.location.includes(selectedLocation);
-            const matchesType = selectedType === "All" || job.type === selectedType;
+            const matchesLocation = selectedLocation === "All" || job.location?.includes(selectedLocation);
+            const matchesType = selectedType === "All" || typeLabels[job.type] === selectedType;
 
             return matchesSearch && matchesDepartment && matchesLocation && matchesType;
         });
-    }, [searchQuery, selectedDepartment, selectedLocation, selectedType]);
+    }, [jobs, searchQuery, selectedDepartment, selectedLocation, selectedType]);
 
     const activeFiltersCount = [selectedDepartment, selectedLocation, selectedType].filter(f => f !== "All").length;
 
@@ -391,7 +294,7 @@ export default function CareersPage() {
 
                         {/* Results count */}
                         <div className="mt-4 text-sm text-[var(--text-muted)]">
-                            Showing {filteredPositions.length} of {openPositions.length} positions
+                            {loading ? 'Loading positions...' : `Showing ${filteredPositions.length} of ${jobs.length} positions`}
                         </div>
                     </div>
 
@@ -411,11 +314,11 @@ export default function CareersPage() {
                                             </h3>
                                             <p className="text-sm text-[var(--text-tertiary)]">{position.department}</p>
                                         </div>
-                                        <span className={`px-3 py-1 text-xs font-medium rounded-full flex-shrink-0 ${position.type === 'Internship'
-                                                ? 'bg-emerald-500/10 text-emerald-500'
-                                                : 'bg-amber-500/10 text-amber-500'
+                                        <span className={`px-3 py-1 text-xs font-medium rounded-full flex-shrink-0 ${position.type === 'INTERNSHIP'
+                                            ? 'bg-emerald-500/10 text-emerald-500'
+                                            : 'bg-amber-500/10 text-amber-500'
                                             }`}>
-                                            {position.type}
+                                            {typeLabels[position.type] || position.type}
                                         </span>
                                     </div>
 
@@ -423,22 +326,7 @@ export default function CareersPage() {
                                         {position.description}
                                     </p>
 
-                                    {/* Skills */}
-                                    <div className="flex flex-wrap gap-2 mb-4">
-                                        {position.skills.slice(0, 4).map((skill) => (
-                                            <span
-                                                key={skill}
-                                                className="px-2 py-1 bg-[var(--bg-tertiary)] text-xs text-[var(--text-secondary)] rounded"
-                                            >
-                                                {skill}
-                                            </span>
-                                        ))}
-                                        {position.skills.length > 4 && (
-                                            <span className="px-2 py-1 text-xs text-[var(--text-muted)]">
-                                                +{position.skills.length - 4} more
-                                            </span>
-                                        )}
-                                    </div>
+
 
                                     {/* Meta info */}
                                     <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-[var(--border-primary)] text-sm text-[var(--text-muted)]">
@@ -493,11 +381,11 @@ export default function CareersPage() {
                                     <h2 className="text-2xl font-bold text-[var(--text-primary)]">
                                         {selectedJob.title}
                                     </h2>
-                                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${selectedJob.type === 'Internship'
-                                            ? 'bg-emerald-500/10 text-emerald-500'
-                                            : 'bg-amber-500/10 text-amber-500'
+                                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${selectedJob.type === 'INTERNSHIP'
+                                        ? 'bg-emerald-500/10 text-emerald-500'
+                                        : 'bg-amber-500/10 text-amber-500'
                                         }`}>
-                                        {selectedJob.type}
+                                        {typeLabels[selectedJob.type] || selectedJob.type}
                                     </span>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--text-tertiary)]">
@@ -520,32 +408,36 @@ export default function CareersPage() {
                             </div>
 
                             {/* Requirements */}
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-[var(--text-primary)] mb-3">Requirements</h3>
-                                <ul className="space-y-2">
-                                    {selectedJob.requirements.map((req, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-[var(--text-tertiary)]">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
-                                            {req}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            {/* Skills */}
-                            <div className="mb-8">
-                                <h3 className="font-semibold text-[var(--text-primary)] mb-3">Required Skills</h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedJob.skills.map((skill) => (
-                                        <span
-                                            key={skill}
-                                            className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-sm text-[var(--text-secondary)] rounded-lg"
-                                        >
-                                            {skill}
-                                        </span>
-                                    ))}
+                            {selectedJob.requirements && selectedJob.requirements.length > 0 && (
+                                <div className="mb-6">
+                                    <h3 className="font-semibold text-[var(--text-primary)] mb-3">Requirements</h3>
+                                    <ul className="space-y-2">
+                                        {selectedJob.requirements.map((req, i) => (
+                                            <li key={i} className="flex items-start gap-2 text-[var(--text-tertiary)]">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
+                                                {req}
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-                            </div>
+                            )}
+
+                            {/* Benefits */}
+                            {selectedJob.benefits && selectedJob.benefits.length > 0 && (
+                                <div className="mb-8">
+                                    <h3 className="font-semibold text-[var(--text-primary)] mb-3">Benefits</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedJob.benefits.map((benefit, i) => (
+                                            <span
+                                                key={i}
+                                                className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-sm text-[var(--text-secondary)] rounded-lg"
+                                            >
+                                                {benefit}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Apply Section */}
                             <div className="border-t border-[var(--border-primary)] pt-6">

@@ -11,64 +11,41 @@ export const metadata: Metadata = {
         "Explore TakeWeb's portfolio of successful enterprise projects and digital transformation case studies.",
 };
 
-const projects = [
-    {
-        slug: "fintech-platform-modernization",
-        title: "FinTech Platform Modernization",
-        client: "Global Financial Services Corp",
-        industry: "Finance",
-        description: "Modernized legacy banking platform to cloud-native microservices, reducing transaction latency by 80%.",
-        technologies: ["AWS", "Kubernetes", "Java", "React"],
-        outcome: "80% faster transactions",
-    },
-    {
-        slug: "ai-powered-healthcare",
-        title: "AI-Powered Healthcare Diagnostics",
-        client: "Healthcare Systems Ltd",
-        industry: "Healthcare",
-        description: "Built ML-powered diagnostic assistant that improved early disease detection accuracy by 35%.",
-        technologies: ["Python", "TensorFlow", "Azure", "Next.js"],
-        outcome: "35% better accuracy",
-    },
-    {
-        slug: "retail-digital-transformation",
-        title: "Retail Digital Transformation",
-        client: "National Retail Chain",
-        industry: "Retail",
-        description: "End-to-end digital transformation including e-commerce, inventory, and customer experience platforms.",
-        technologies: ["Next.js", "Node.js", "PostgreSQL", "AWS"],
-        outcome: "150% revenue growth",
-    },
-    {
-        slug: "manufacturing-iot-platform",
-        title: "Manufacturing IoT Platform",
-        client: "Industrial Manufacturing Inc",
-        industry: "Manufacturing",
-        description: "Connected factory solution with real-time monitoring, predictive maintenance, and analytics.",
-        technologies: ["Azure IoT", "Python", "React", "TimescaleDB"],
-        outcome: "40% reduced downtime",
-    },
-    {
-        slug: "government-citizen-portal",
-        title: "Government Citizen Portal",
-        client: "State Government Agency",
-        industry: "Government",
-        description: "Unified digital services portal serving 50 million citizens with 200+ government services.",
-        technologies: ["Angular", "Spring Boot", "Oracle", "Kubernetes"],
-        outcome: "50M+ citizens served",
-    },
-    {
-        slug: "logistics-optimization",
-        title: "Logistics Optimization System",
-        client: "Global Logistics Corp",
-        industry: "Logistics",
-        description: "AI-driven route optimization and fleet management reducing operational costs significantly.",
-        technologies: ["Python", "ML", "React", "GCP"],
-        outcome: "25% cost reduction",
-    },
-];
+interface Project {
+    id: string;
+    slug: string;
+    title: string;
+    client: string;
+    industry: string;
+    shortDescription: string;
+    description: string;
+    challenge: string;
+    solution: string;
+    results: string;
+    technologies: string[];
+    coverImage: string;
+    isFeatured: boolean;
+    isActive: boolean;
+}
 
-export default function ProjectsPage() {
+async function getProjects(): Promise<Project[]> {
+    try {
+        const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/projects`,
+            { next: { revalidate: 3600 } } // Cache for 1 hour
+        );
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.filter((p: Project) => p.isActive);
+    } catch (error) {
+        console.error('Failed to fetch projects:', error);
+        return [];
+    }
+}
+
+export default async function ProjectsPage() {
+    const projects = await getProjects();
+
     return (
         <>
             {/* Hero */}
@@ -94,47 +71,77 @@ export default function ProjectsPage() {
             {/* Projects Grid */}
             <section className="section-padding">
                 <div className="container-main">
-                    <div className="grid md:grid-cols-2 gap-8">
-                        {projects.map((project) => (
-                            <Link key={project.slug} href={`/projects/${project.slug}`}>
-                                <Card3D className="h-full group cursor-pointer overflow-hidden p-0">
-                                    {/* Project visual */}
-                                    <div className="aspect-video bg-gradient-to-br from-primary-500/10 to-accent-500/10 flex items-center justify-center relative">
-                                        <div className="text-6xl opacity-30">🚀</div>
-                                        <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-[var(--bg-primary)]/80 text-xs text-[var(--text-secondary)]">
-                                            {project.industry}
+                    {projects.length === 0 ? (
+                        <div className="text-center py-16">
+                            <p className="text-[var(--text-tertiary)]">No projects available at this time.</p>
+                        </div>
+                    ) : (
+                        <div className="grid md:grid-cols-2 gap-8">
+                            {projects.map((project) => (
+                                <Link key={project.id} href={`/projects/${project.slug}`}>
+                                    <Card3D className="h-full group cursor-pointer overflow-hidden p-0">
+                                        {/* Project visual */}
+                                        <div className="aspect-video bg-gradient-to-br from-primary-500/10 to-accent-500/10 flex items-center justify-center relative overflow-hidden">
+                                            {project.coverImage ? (
+                                                <img
+                                                    src={project.coverImage}
+                                                    alt={project.title}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="text-6xl opacity-30">🚀</div>
+                                            )}
+                                            <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-[var(--bg-primary)]/80 text-xs text-[var(--text-secondary)]">
+                                                {project.industry || 'Technology'}
+                                            </div>
+                                            {project.isFeatured && (
+                                                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-amber-500/90 text-xs text-white font-medium">
+                                                    Featured
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
 
-                                    <div className="p-6">
-                                        <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2 group-hover:text-primary-500 transition-colors">
-                                            {project.title}
-                                        </h2>
-                                        <p className="text-sm text-[var(--text-muted)] mb-3">{project.client}</p>
-                                        <p className="text-[var(--text-tertiary)] mb-4">{project.description}</p>
+                                        <div className="p-6">
+                                            <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2 group-hover:text-primary-500 transition-colors">
+                                                {project.title}
+                                            </h2>
+                                            <p className="text-sm text-[var(--text-muted)] mb-3">{project.client}</p>
+                                            <p className="text-[var(--text-tertiary)] mb-4 line-clamp-2">
+                                                {project.shortDescription || project.description}
+                                            </p>
 
-                                        {/* Technologies */}
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            {project.technologies.map((tech) => (
-                                                <span
-                                                    key={tech}
-                                                    className="px-2 py-1 rounded bg-[var(--bg-tertiary)] text-xs text-[var(--text-secondary)]"
-                                                >
-                                                    {tech}
-                                                </span>
-                                            ))}
+                                            {/* Technologies */}
+                                            {project.technologies && project.technologies.length > 0 && (
+                                                <div className="flex flex-wrap gap-2 mb-4">
+                                                    {project.technologies.slice(0, 4).map((tech) => (
+                                                        <span
+                                                            key={tech}
+                                                            className="px-2 py-1 rounded bg-[var(--bg-tertiary)] text-xs text-[var(--text-secondary)]"
+                                                        >
+                                                            {tech}
+                                                        </span>
+                                                    ))}
+                                                    {project.technologies.length > 4 && (
+                                                        <span className="px-2 py-1 text-xs text-[var(--text-muted)]">
+                                                            +{project.technologies.length - 4} more
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Results */}
+                                            {project.results && (
+                                                <div className="flex items-center justify-between pt-4 border-t border-[var(--border-primary)]">
+                                                    <span className="text-sm text-[var(--text-muted)]">Key Outcome</span>
+                                                    <span className="font-semibold text-primary-500">{project.results}</span>
+                                                </div>
+                                            )}
                                         </div>
-
-                                        {/* Outcome */}
-                                        <div className="flex items-center justify-between pt-4 border-t border-[var(--border-primary)]">
-                                            <span className="text-sm text-[var(--text-muted)]">Key Outcome</span>
-                                            <span className="font-semibold text-primary-500">{project.outcome}</span>
-                                        </div>
-                                    </div>
-                                </Card3D>
-                            </Link>
-                        ))}
-                    </div>
+                                    </Card3D>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </section>
 

@@ -11,6 +11,36 @@ export const metadata: Metadata = {
     description: "Insights, tutorials, and thought leadership from the TakeWeb team on enterprise IT, cloud, AI, and digital transformation.",
 };
 
+interface BlogPost {
+    id: string;
+    slug: string;
+    title: string;
+    excerpt: string;
+    content: string;
+    coverImage: string;
+    author: string;
+    category: string;
+    readTime: number;
+    publishedAt: string;
+    isFeatured: boolean;
+    isPublished: boolean;
+}
+
+async function getBlogPosts(): Promise<BlogPost[]> {
+    try {
+        const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/blog`,
+            { next: { revalidate: 1800 } } // Cache for 30 minutes
+        );
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.filter((post: BlogPost) => post.isPublished);
+    } catch (error) {
+        console.error('Failed to fetch blog posts:', error);
+        return [];
+    }
+}
+
 const categories = [
     "All",
     "Engineering",
@@ -20,81 +50,11 @@ const categories = [
     "Leadership",
 ];
 
-const featuredPost = {
-    title: "The Future of Enterprise AI: Trends and Predictions for 2024",
-    excerpt: "Explore how AI is transforming enterprise operations, from intelligent automation to predictive analytics, and what it means for your business.",
-    image: "/founder.jpg",
-    author: "TakeWeb Team",
-    date: "Jan 15, 2024",
-    readTime: "8 min read",
-    category: "AI & ML",
-    href: "/blog/future-of-enterprise-ai",
-};
+export default async function BlogPage() {
+    const allPosts = await getBlogPosts();
+    const featuredPost = allPosts.find(post => post.isFeatured) || allPosts[0];
+    const regularPosts = allPosts.filter(post => !post.isFeatured).slice(0, 6);
 
-const posts = [
-    {
-        title: "Kubernetes Best Practices for Production Workloads",
-        excerpt: "Learn essential practices for running Kubernetes in production, from resource management to security hardening.",
-        image: "/founder.jpg",
-        author: "TakeWeb Team",
-        date: "Jan 10, 2024",
-        readTime: "6 min read",
-        category: "Cloud & DevOps",
-        href: "/blog/kubernetes-best-practices",
-    },
-    {
-        title: "Building Secure APIs: A Complete Guide",
-        excerpt: "Comprehensive guide to API security covering authentication, authorization, rate limiting, and more.",
-        image: "/founder.jpg",
-        author: "TakeWeb Team",
-        date: "Jan 5, 2024",
-        readTime: "10 min read",
-        category: "Security",
-        href: "/blog/secure-api-guide",
-    },
-    {
-        title: "Microservices vs Monolith: Making the Right Choice",
-        excerpt: "When should you use microservices? We break down the pros, cons, and decision factors.",
-        image: "/founder.jpg",
-        author: "TakeWeb Team",
-        date: "Dec 28, 2023",
-        readTime: "5 min read",
-        category: "Engineering",
-        href: "/blog/microservices-vs-monolith",
-    },
-    {
-        title: "Data Pipeline Architecture for Real-Time Analytics",
-        excerpt: "Design patterns and best practices for building scalable real-time data pipelines.",
-        image: "/founder.jpg",
-        author: "TakeWeb Team",
-        date: "Dec 20, 2023",
-        readTime: "7 min read",
-        category: "Engineering",
-        href: "/blog/data-pipeline-architecture",
-    },
-    {
-        title: "Zero Trust Security: Implementation Guide",
-        excerpt: "Step-by-step guide to implementing zero trust architecture in your organization.",
-        image: "/founder.jpg",
-        author: "TakeWeb Team",
-        date: "Dec 15, 2023",
-        readTime: "9 min read",
-        category: "Security",
-        href: "/blog/zero-trust-guide",
-    },
-    {
-        title: "Leading Engineering Teams Through Change",
-        excerpt: "Lessons learned from managing engineering teams during digital transformation.",
-        image: "/founder.jpg",
-        author: "TakeWeb Team",
-        date: "Dec 10, 2023",
-        readTime: "4 min read",
-        category: "Leadership",
-        href: "/blog/leading-engineering-teams",
-    },
-];
-
-export default function BlogPage() {
     return (
         <>
             {/* Hero Section */}
@@ -126,8 +86,8 @@ export default function BlogPage() {
                             <button
                                 key={index}
                                 className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${index === 0
-                                        ? "bg-primary-500 text-white"
-                                        : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]"
+                                    ? "bg-primary-500 text-white"
+                                    : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)]"
                                     }`}
                             >
                                 {category}
@@ -138,50 +98,58 @@ export default function BlogPage() {
             </section>
 
             {/* Featured Post */}
-            <section className="pb-16">
-                <div className="container-main">
-                    <Link href={featuredPost.href}>
-                        <Card3D className="group overflow-hidden p-0">
-                            <div className="grid md:grid-cols-2 gap-0">
-                                <div className="relative aspect-video md:aspect-auto">
-                                    <Image
-                                        src={featuredPost.image}
-                                        alt={featuredPost.title}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                    <div className="absolute top-4 left-4">
-                                        <span className="px-3 py-1 text-xs font-medium bg-primary-500 text-white rounded-full">
-                                            Featured
+            {featuredPost && (
+                <section className="pb-16">
+                    <div className="container-main">
+                        <Link href={`/blog/${featuredPost.slug}`}>
+                            <Card3D className="group overflow-hidden p-0">
+                                <div className="grid md:grid-cols-2 gap-0">
+                                    <div className="relative aspect-video md:aspect-auto">
+                                        {featuredPost.coverImage ? (
+                                            <Image
+                                                src={featuredPost.coverImage}
+                                                alt={featuredPost.title}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-primary-500/10 to-accent-500/10 flex items-center justify-center text-6xl">
+                                                📝
+                                            </div>
+                                        )}
+                                        <div className="absolute top-4 left-4">
+                                            <span className="px-3 py-1 text-xs font-medium bg-primary-500 text-white rounded-full">
+                                                Featured
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="p-8 md:p-10 flex flex-col justify-center">
+                                        <span className="text-sm font-medium text-primary-500 mb-3">
+                                            {featuredPost.category}
                                         </span>
+                                        <h2 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-4 group-hover:text-primary-500 transition-colors">
+                                            {featuredPost.title}
+                                        </h2>
+                                        <p className="text-[var(--text-tertiary)] mb-6">
+                                            {featuredPost.excerpt}
+                                        </p>
+                                        <div className="flex items-center gap-4 text-sm text-[var(--text-muted)]">
+                                            <span className="flex items-center gap-1">
+                                                <User size={14} />
+                                                {featuredPost.author}
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Clock size={14} />
+                                                {featuredPost.readTime} min read
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="p-8 md:p-10 flex flex-col justify-center">
-                                    <span className="text-sm font-medium text-primary-500 mb-3">
-                                        {featuredPost.category}
-                                    </span>
-                                    <h2 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-4 group-hover:text-primary-500 transition-colors">
-                                        {featuredPost.title}
-                                    </h2>
-                                    <p className="text-[var(--text-tertiary)] mb-6">
-                                        {featuredPost.excerpt}
-                                    </p>
-                                    <div className="flex items-center gap-4 text-sm text-[var(--text-muted)]">
-                                        <span className="flex items-center gap-1">
-                                            <User size={14} />
-                                            {featuredPost.author}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <Clock size={14} />
-                                            {featuredPost.readTime}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </Card3D>
-                    </Link>
-                </div>
-            </section>
+                            </Card3D>
+                        </Link>
+                    </div>
+                </section>
+            )}
 
             {/* All Posts */}
             <section className="section-padding bg-[var(--bg-secondary)]">
@@ -192,44 +160,60 @@ export default function BlogPage() {
                         titleHighlight="Articles"
                     />
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {posts.map((post, index) => (
-                            <Link key={index} href={post.href}>
-                                <Card3D className="h-full group overflow-hidden p-0">
-                                    <div className="relative aspect-video">
-                                        <Image
-                                            src={post.image}
-                                            alt={post.title}
-                                            fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                    </div>
-                                    <div className="p-6">
-                                        <span className="text-xs font-medium text-primary-500 mb-2 block">
-                                            {post.category}
-                                        </span>
-                                        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2 group-hover:text-primary-500 transition-colors line-clamp-2">
-                                            {post.title}
-                                        </h3>
-                                        <p className="text-sm text-[var(--text-tertiary)] mb-4 line-clamp-2">
-                                            {post.excerpt}
-                                        </p>
-                                        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
-                                            <span>{post.date}</span>
-                                            <span>{post.readTime}</span>
-                                        </div>
-                                    </div>
-                                </Card3D>
-                            </Link>
-                        ))}
-                    </div>
+                    {regularPosts.length === 0 ? (
+                        <div className="text-center py-16">
+                            <p className="text-[var(--text-tertiary)]">No blog posts available yet. Stay tuned!</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {regularPosts.map((post) => (
+                                    <Link key={post.id} href={`/blog/${post.slug}`}>
+                                        <Card3D className="h-full group overflow-hidden p-0">
+                                            <div className="relative aspect-video">
+                                                {post.coverImage ? (
+                                                    <Image
+                                                        src={post.coverImage}
+                                                        alt={post.title}
+                                                        fill
+                                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gradient-to-br from-primary-500/10 to-accent-500/10 flex items-center justify-center text-4xl">
+                                                        📝
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="p-6">
+                                                <span className="text-xs font-medium text-primary-500 mb-2 block">
+                                                    {post.category}
+                                                </span>
+                                                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2 group-hover:text-primary-500 transition-colors line-clamp-2">
+                                                    {post.title}
+                                                </h3>
+                                                <p className="text-sm text-[var(--text-tertiary)] mb-4 line-clamp-2">
+                                                    {post.excerpt}
+                                                </p>
+                                                <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+                                                    <span>{new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                                    <span>{post.readTime} min read</span>
+                                                </div>
+                                            </div>
+                                        </Card3D>
+                                    </Link>
+                                ))}
+                            </div>
 
-                    <div className="text-center mt-12">
-                        <button className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-[var(--text-secondary)] border border-[var(--border-secondary)] rounded-xl hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors">
-                            Load More Articles
-                            <ArrowRight size={16} />
-                        </button>
-                    </div>
+                            {allPosts.length > 6 && (
+                                <div className="text-center mt-12">
+                                    <Link href="/blog?page=2" className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-[var(--text-secondary)] border border-[var(--border-secondary)] rounded-xl hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors">
+                                        Load More Articles
+                                        <ArrowRight size={16} />
+                                    </Link>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             </section>
 
