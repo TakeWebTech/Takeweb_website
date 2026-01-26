@@ -47,7 +47,7 @@ async function getServices(): Promise<Service[]> {
     }
 }
 
-const process = [
+const workflowSteps = [
     {
         step: "01",
         title: "Discovery",
@@ -172,7 +172,7 @@ export default async function ServicesPage() {
                     />
 
                     <div className="grid md:grid-cols-5 gap-6">
-                        {process.map((item, index) => (
+                        {workflowSteps.map((item, index) => (
                             <div key={index} className="relative">
                                 <div className="text-center">
                                     <div className="w-16 h-16 rounded-2xl bg-primary-500/10 text-primary-500 font-bold text-2xl flex items-center justify-center mx-auto mb-4">
@@ -187,7 +187,7 @@ export default async function ServicesPage() {
                                 </div>
 
                                 {/* Connector */}
-                                {index < process.length - 1 && (
+                                {index < workflowSteps.length - 1 && (
                                     <div className="hidden md:block absolute top-8 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px bg-gradient-to-r from-primary-500/50 to-transparent" />
                                 )}
                             </div>
