@@ -5,6 +5,7 @@ import { PartnerSlider } from "@/components/partner-slider";
 import { Card3D } from "@/components/ui/card-3d";
 import { SectionHeader } from "@/components/ui/section-header";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { ScrollReveal, StaggerContainer, StaggerItem, FadeIn } from "@/components/ui/scroll-animations";
 import { ArrowRight, Code, Cloud, Shield, Cpu, Smartphone, BarChart3, Globe, Zap, Users, Award } from "lucide-react";
 
 const services = [
@@ -163,51 +164,57 @@ export default function HomePage() {
             {/* Stats Section */}
             <section className="py-16 border-b border-[var(--border-primary)]">
                 <div className="container-main">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                    <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-8">
                         {stats.map((stat, index) => (
-                            <div key={index} className="text-center">
-                                <div className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mb-2">
-                                    <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                            <StaggerItem key={index}>
+                                <div className="text-center">
+                                    <div className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mb-2">
+                                        <AnimatedCounter value={stat.value} suffix={stat.suffix} />
+                                    </div>
+                                    <div className="text-sm text-[var(--text-tertiary)] font-medium">
+                                        {stat.label}
+                                    </div>
                                 </div>
-                                <div className="text-sm text-[var(--text-tertiary)] font-medium">
-                                    {stat.label}
-                                </div>
-                            </div>
+                            </StaggerItem>
                         ))}
-                    </div>
+                    </StaggerContainer>
                 </div>
             </section>
 
             {/* Services Section */}
             <section className="section-padding">
                 <div className="container-main">
-                    <SectionHeader
-                        overline="Our Services"
-                        title="Comprehensive IT Solutions"
-                        titleHighlight="for Modern Enterprises"
-                        description="From custom software development to cloud infrastructure and AI, we deliver end-to-end solutions that drive business growth."
-                    />
+                    <FadeIn>
+                        <SectionHeader
+                            overline="Our Services"
+                            title="Comprehensive IT Solutions"
+                            titleHighlight="for Modern Enterprises"
+                            description="From custom software development to cloud infrastructure and AI, we deliver end-to-end solutions that drive business growth."
+                        />
+                    </FadeIn>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {services.map((service, index) => (
-                            <Link key={index} href={service.href}>
-                                <Card3D className="h-full group cursor-pointer">
-                                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${service.gradient} flex items-center justify-center mb-5`}>
-                                        <service.icon className="text-white" size={24} />
-                                    </div>
-                                    <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-3 group-hover:text-amber-500 transition-colors">
-                                        {service.title}
-                                    </h3>
-                                    <p className="text-[var(--text-tertiary)] mb-4">
-                                        {service.description}
-                                    </p>
-                                    <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 group-hover:gap-2 transition-all">
-                                        Learn more <ArrowRight size={14} />
-                                    </span>
-                                </Card3D>
-                            </Link>
+                            <StaggerItem key={index}>
+                                <Link href={service.href}>
+                                    <Card3D className="h-full group cursor-pointer">
+                                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${service.gradient} flex items-center justify-center mb-5`}>
+                                            <service.icon className="text-white" size={24} />
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-3 group-hover:text-amber-500 transition-colors">
+                                            {service.title}
+                                        </h3>
+                                        <p className="text-[var(--text-tertiary)] mb-4">
+                                            {service.description}
+                                        </p>
+                                        <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 group-hover:gap-2 transition-all">
+                                            Learn more <ArrowRight size={14} />
+                                        </span>
+                                    </Card3D>
+                                </Link>
+                            </StaggerItem>
                         ))}
-                    </div>
+                    </StaggerContainer>
                 </div>
             </section>
 
@@ -229,23 +236,25 @@ export default function HomePage() {
                                 to deliver solutions that drive real results.
                             </p>
 
-                            <div className="grid sm:grid-cols-2 gap-6">
+                            <StaggerContainer className="grid sm:grid-cols-2 gap-6">
                                 {features.map((feature, index) => (
-                                    <div key={index} className="flex gap-4">
-                                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                                            <feature.icon size={24} />
+                                    <StaggerItem key={index}>
+                                        <div className="flex gap-4">
+                                            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                                                <feature.icon size={24} />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold text-[var(--text-primary)] mb-1">
+                                                    {feature.title}
+                                                </h4>
+                                                <p className="text-sm text-[var(--text-tertiary)]">
+                                                    {feature.description}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 className="font-semibold text-[var(--text-primary)] mb-1">
-                                                {feature.title}
-                                            </h4>
-                                            <p className="text-sm text-[var(--text-tertiary)]">
-                                                {feature.description}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    </StaggerItem>
                                 ))}
-                            </div>
+                            </StaggerContainer>
                         </div>
 
                         {/* Right - Visual */}
@@ -294,44 +303,46 @@ export default function HomePage() {
                         description="See what our clients say about working with TakeWeb Enterprise."
                     />
 
-                    <div className="grid md:grid-cols-3 gap-6">
+                    <StaggerContainer className="grid md:grid-cols-3 gap-6">
                         {testimonials.map((testimonial, index) => (
-                            <Card3D key={index} className="h-full">
-                                <div className="flex flex-col h-full">
-                                    <div className="flex gap-1 mb-4">
-                                        {[...Array(5)].map((_, i) => (
-                                            <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                            </svg>
-                                        ))}
-                                    </div>
-
-                                    <p className="text-[var(--text-secondary)] mb-6 flex-grow">
-                                        &ldquo;{testimonial.quote}&rdquo;
-                                    </p>
-
-                                    <div className="flex items-center gap-3 pt-4 border-t border-[var(--border-primary)]">
-                                        <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[var(--bg-tertiary)]">
-                                            <Image
-                                                src={testimonial.avatar}
-                                                alt={testimonial.author}
-                                                fill
-                                                className="object-cover"
-                                            />
+                            <StaggerItem key={index}>
+                                <Card3D className="h-full">
+                                    <div className="flex flex-col h-full">
+                                        <div className="flex gap-1 mb-4">
+                                            {[...Array(5)].map((_, i) => (
+                                                <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                </svg>
+                                            ))}
                                         </div>
-                                        <div>
-                                            <div className="font-semibold text-[var(--text-primary)] text-sm">
-                                                {testimonial.author}
+
+                                        <p className="text-[var(--text-secondary)] mb-6 flex-grow">
+                                            &ldquo;{testimonial.quote}&rdquo;
+                                        </p>
+
+                                        <div className="flex items-center gap-3 pt-4 border-t border-[var(--border-primary)]">
+                                            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[var(--bg-tertiary)]">
+                                                <Image
+                                                    src={testimonial.avatar}
+                                                    alt={testimonial.author}
+                                                    fill
+                                                    className="object-cover"
+                                                />
                                             </div>
-                                            <div className="text-xs text-[var(--text-tertiary)]">
-                                                {testimonial.role}
+                                            <div>
+                                                <div className="font-semibold text-[var(--text-primary)] text-sm">
+                                                    {testimonial.author}
+                                                </div>
+                                                <div className="text-xs text-[var(--text-tertiary)]">
+                                                    {testimonial.role}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </Card3D>
+                                </Card3D>
+                            </StaggerItem>
                         ))}
-                    </div>
+                    </StaggerContainer>
                 </div>
             </section>
 
