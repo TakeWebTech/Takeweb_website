@@ -109,6 +109,10 @@ export default function HomePage() {
         <>
             {/* Hero Section */}
             <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+                {/* Animated Gradient Background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-purple-500/5 animate-gradient" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(179,155,94,0.1),transparent_50%)] animate-pulse" style={{ animationDuration: '4s' }} />
+
                 <FloatingElements />
 
                 <div className="container-main relative z-10 pt-24 pb-16">

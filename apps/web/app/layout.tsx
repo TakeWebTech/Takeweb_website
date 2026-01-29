@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { Preloader } from "@/components/ui/preloader";
+import { PageTransition } from "@/components/ui/page-transition";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -114,7 +115,9 @@ export default function RootLayout({
         <Preloader />
         <ThemeProvider>
           <Navigation />
-          <main>{children}</main>
+          <PageTransition>
+            <main>{children}</main>
+          </PageTransition>
           <Footer />
         </ThemeProvider>
       </body>

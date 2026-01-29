@@ -501,6 +501,12 @@
   .delay-500 {
     transition-delay: 500ms;
   }
+
+  /* Animated Gradient Background */
+  .animate-gradient {
+    animation: gradient-shift 8s ease infinite;
+    background-size: 200% 200%;
+  }
 }
 
 /* ===== Animations ===== */
@@ -650,4 +656,65 @@
 .hover-lift:hover {
   transform: translateY(-6px);
   box-shadow: var(--shadow-xl);
+}
+
+/* ===== Mobile Optimizations ===== */
+@media (max-width: 768px) {
+
+  /* Touch-friendly tap targets */
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  /* Disable 3D effects on mobile for performance */
+  .card-3d {
+    transform: none !important;
+  }
+
+  .card-3d:hover {
+    transform: translateY(-4px) !important;
+  }
+
+  /* Better spacing on mobile */
+  .container-main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Optimize hero text */
+  h1 {
+    font-size: clamp(2rem, 8vw, 3rem) !important;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 375px) {
+  .container-main {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  h1 {
+    font-size: 1.75rem !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
 }
