@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { Preloader } from "@/components/ui/preloader";
-import { RobotMascot } from "@/components/ui/robot-mascot";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -113,7 +112,6 @@ export default function RootLayout({
         className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable} font-sans`}
       >
         <Preloader />
-        <RobotMascot />
         <ThemeProvider>
           <Navigation />
           <main>{children}</main>
