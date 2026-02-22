@@ -3,9 +3,20 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Eye, Image as ImageIcon, X, Trash2 } from "lucide-react";
+import {
+    ArrowLeft,
+    Save,
+    Trash2,
+    Upload,
+    X,
+    Tag,
+    Calendar,
+    Send,
+    Loader2,
+} from "lucide-react";
 import { api, endpoints } from "@/lib/api";
 import { useToast } from "@/components/ui/toast";
+import RichEditor from "@/components/ui/rich-editor";
 
 interface Category {
     id: string;
@@ -24,24 +35,26 @@ interface PostData {
     metaTitle: string;
     metaDescription: string;
     coverImage: string;
+    tags?: string[];
 }
 
 export default function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
-    const resolvedParams = use(params);
+    const { id } = use(params);
     const router = useRouter();
     const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [formData, setFormData] = useState<PostData>({
-        id: "",
+    const [tagInput, setTagInput] = useState("");
+    const [tags, setTags] = useState<string[]>([]);
+    const [activeTab, setActiveTab] = useState<"content" | "seo">("content");
+    const [formData, setFormData] = useState({
         title: "",
         slug: "",
         excerpt: "",
         content: "",
         categoryId: "",
-        status: "DRAFT",
+        status: "draft",
         metaTitle: "",
         metaDescription: "",
         coverImage: "",
@@ -50,34 +63,38 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
     useEffect(() => {
         fetchCategories();
         fetchPost();
-    }, [resolvedParams.id]);
+    }, []);
 
     const fetchCategories = async () => {
         try {
-            const data = await api.get<Category[]>("/api/v1/blog/categories");
+            const data = await api.get<Category[]>("/api/v1/categories");
             setCategories(data);
-        } catch (error) {
-            console.error("Failed to fetch categories:", error);
+        } catch {
+            setCategories([
+                { id: "1", name: "Technology", slug: "technology" },
+                { id: "2", name: "Design", slug: "design" },
+                { id: "3", name: "Business", slug: "business" },
+                { id: "4", name: "Engineering", slug: "engineering" },
+            ]);
         }
     };
 
     const fetchPost = async () => {
         try {
-            const data = await api.get<PostData>(`/api/v1/blog/admin/posts/${resolvedParams.id}`);
+            const post = await api.get<PostData>(endpoints.posts.get(id));
             setFormData({
-                id: data.id,
-                title: data.title || "",
-                slug: data.slug || "",
-                excerpt: data.excerpt || "",
-                content: data.content || "",
-                categoryId: data.categoryId || "",
-                status: data.status || "DRAFT",
-                metaTitle: data.metaTitle || "",
-                metaDescription: data.metaDescription || "",
-                coverImage: data.coverImage || "",
+                title: post.title || "",
+                slug: post.slug || "",
+                excerpt: post.excerpt || "",
+                content: post.content || "",
+                categoryId: post.categoryId || "",
+                status: post.status || "draft",
+                metaTitle: post.metaTitle || "",
+                metaDescription: post.metaDescription || "",
+                coverImage: post.coverImage || "",
             });
+            setTags(post.tags || []);
         } catch (error: any) {
-            setError(error.message || "Failed to load post");
             showToast("Failed to load post", "error");
         } finally {
             setLoading(false);
@@ -88,326 +105,228 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const addTag = () => {
+        const tag = tagInput.trim();
+        if (tag && !tags.includes(tag)) {
+            setTags([...tags, tag]);
+            setTagInput("");
+        }
+    };
+
+    const removeTag = (tag: string) => setTags(tags.filter((t) => t !== tag));
+
+    const handleTagKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            addTag();
+        }
+    };
+
+    const handleSubmit = async (status?: string) => {
         setSaving(true);
-        setError(null);
-
         try {
-            const payload: Record<string, any> = {
-                title: formData.title,
-                slug: formData.slug,
-                content: formData.content,
-                status: formData.status,
-            };
-
-            if (formData.excerpt) payload.excerpt = formData.excerpt;
-            if (formData.categoryId) payload.categoryId = formData.categoryId;
-            if (formData.coverImage) payload.coverImage = formData.coverImage;
-            if (formData.metaTitle) payload.metaTitle = formData.metaTitle;
-            if (formData.metaDescription) payload.metaDescription = formData.metaDescription;
-
-            await api.put(`/api/v1/blog/admin/posts/${resolvedParams.id}`, payload);
-            showToast("Post updated successfully!", "success");
+            const payload = { ...formData, tags, ...(status ? { status } : {}) };
+            await api.put(endpoints.posts.update(id), payload);
+            showToast("Post updated!", "success");
             router.push("/dashboard/posts");
         } catch (error: any) {
-            setError(error.message || "Failed to update post");
-            showToast(error.message || "Failed to update post", "error");
+            showToast(error.message || "Failed to update", "error");
         } finally {
             setSaving(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
-            return;
-        }
-
+        if (!confirm("Are you sure? This cannot be undone.")) return;
         try {
-            await api.delete(`/api/v1/blog/admin/posts/${resolvedParams.id}`);
-            showToast("Post deleted successfully", "success");
+            await api.delete(endpoints.posts.delete(id));
+            showToast("Post deleted", "success");
             router.push("/dashboard/posts");
         } catch (error: any) {
-            showToast(error.message || "Failed to delete post", "error");
+            showToast(error.message || "Failed to delete", "error");
+        }
+    };
+
+    const handleCoverDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith("image/")) {
+            const url = URL.createObjectURL(file);
+            setFormData((prev) => ({ ...prev, coverImage: url }));
         }
     };
 
     if (loading) {
         return (
-            <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <div className="skeleton w-10 h-10 rounded-lg" />
-                    <div>
-                        <div className="skeleton h-8 w-48 mb-2" />
-                        <div className="skeleton h-4 w-32" />
-                    </div>
-                </div>
-                <div className="grid lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="skeleton h-96 rounded-xl" />
-                    </div>
-                    <div className="space-y-6">
-                        <div className="skeleton h-48 rounded-xl" />
-                        <div className="skeleton h-48 rounded-xl" />
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (error && !formData.id) {
-        return (
-            <div className="card text-center py-12">
-                <p className="text-error-500 mb-4">{error}</p>
-                <Link href="/dashboard/posts" className="btn-primary">
-                    Back to Posts
-                </Link>
+            <div className="flex items-center justify-center h-64">
+                <Loader2 size={32} className="animate-spin text-primary-400" />
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fade-in">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <Link
-                        href="/dashboard/posts"
-                        className="p-2 rounded-lg hover:bg-dark-700 text-neutral-400"
-                    >
+                    <Link href="/dashboard/posts" className="btn-icon">
                         <ArrowLeft size={20} />
                     </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold text-white">Edit Post</h1>
-                        <p className="text-neutral-400 mt-1">Update your article</p>
+                    <div className="page-header">
+                        <h1>Edit Post</h1>
+                        <p className="truncate max-w-[300px]">{formData.title || "Untitled"}</p>
                     </div>
                 </div>
-                <div className="flex gap-3">
-                    <button
-                        type="button"
-                        onClick={handleDelete}
-                        className="btn-danger"
-                    >
+                <div className="flex items-center gap-2">
+                    <button onClick={handleDelete} className="btn-icon hover:text-error-400" title="Delete">
                         <Trash2 size={18} />
-                        Delete
-                    </button>
-                    <button type="button" className="btn-secondary">
-                        <Eye size={18} />
-                        Preview
                     </button>
                     <button
-                        type="submit"
-                        form="post-form"
-                        disabled={saving}
-                        className="btn-primary disabled:opacity-50"
+                        onClick={() => handleSubmit()}
+                        disabled={saving || !formData.title}
+                        className="btn-secondary disabled:opacity-50"
                     >
-                        <Save size={18} />
-                        {saving ? "Saving..." : "Save Changes"}
+                        <Save size={16} /> {saving ? "Saving..." : "Save"}
                     </button>
+                    {formData.status !== "published" && (
+                        <button
+                            onClick={() => handleSubmit("published")}
+                            disabled={saving || !formData.title}
+                            className="btn-primary disabled:opacity-50"
+                        >
+                            <Send size={16} /> Publish
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Error message */}
-            {error && (
-                <div className="bg-error-500/10 border border-error-500/20 rounded-lg p-4 flex items-center justify-between">
-                    <p className="text-error-500">{error}</p>
-                    <button onClick={() => setError(null)} className="text-error-500 hover:text-error-400">
-                        <X size={18} />
-                    </button>
-                </div>
-            )}
+            {/* Tabs */}
+            <div className="tab-list">
+                <button className={`tab-item ${activeTab === "content" ? "active" : ""}`} onClick={() => setActiveTab("content")}>
+                    Content
+                </button>
+                <button className={`tab-item ${activeTab === "seo" ? "active" : ""}`} onClick={() => setActiveTab("seo")}>
+                    SEO & Meta
+                </button>
+            </div>
 
-            <form id="post-form" onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6">
-                {/* Main Content */}
+            <div className="grid lg:grid-cols-3 gap-6">
+                {/* Main */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="card">
-                        <h2 className="text-lg font-semibold text-white mb-4">Content</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">
-                                    Title
-                                </label>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    value={formData.title}
-                                    onChange={handleChange}
-                                    placeholder="Enter post title"
-                                    required
-                                    className="w-full"
-                                />
+                    {activeTab === "content" && (
+                        <>
+                            <div className="card space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-300 mb-1.5">Title <span className="text-red-400">*</span></label>
+                                    <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="Post title..." required className="w-full text-lg" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-300 mb-1.5">Slug</label>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-neutral-500">/blog/</span>
+                                        <input type="text" name="slug" value={formData.slug} onChange={handleChange} className="flex-1 font-mono text-sm" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-300 mb-1.5">Excerpt</label>
+                                    <textarea name="excerpt" value={formData.excerpt} onChange={handleChange} placeholder="Brief summary..." rows={2} className="w-full resize-none" />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">
-                                    Slug
-                                </label>
-                                <input
-                                    type="text"
-                                    name="slug"
-                                    value={formData.slug}
-                                    onChange={handleChange}
-                                    placeholder="post-url-slug"
-                                    className="w-full font-mono text-sm"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">
-                                    Excerpt
-                                </label>
-                                <textarea
-                                    name="excerpt"
-                                    value={formData.excerpt}
-                                    onChange={handleChange}
-                                    placeholder="Brief summary of the post..."
-                                    rows={2}
-                                    className="w-full resize-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">
-                                    Content
-                                </label>
-                                <textarea
-                                    name="content"
+                            <div className="card">
+                                <RichEditor
+                                    label="Content"
                                     value={formData.content}
-                                    onChange={handleChange}
-                                    placeholder="Write your article content here..."
-                                    rows={15}
-                                    required
-                                    className="w-full resize-y font-mono text-sm"
+                                    onChange={(val) => setFormData((prev) => ({ ...prev, content: val }))}
+                                    placeholder="Write your post content..."
+                                    minHeight="400px"
                                 />
-                                <p className="text-xs text-neutral-500 mt-1">
-                                    Supports Markdown formatting
-                                </p>
+                            </div>
+                        </>
+                    )}
+
+                    {activeTab === "seo" && (
+                        <div className="card space-y-4">
+                            <h2 className="text-lg font-semibold text-white">SEO Settings</h2>
+                            <div>
+                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Meta Title</label>
+                                <input type="text" name="metaTitle" value={formData.metaTitle} onChange={handleChange} className="w-full" />
+                                <p className="mt-1 text-xs text-neutral-500">{formData.metaTitle.length}/60</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">Meta Description</label>
+                                <textarea name="metaDescription" value={formData.metaDescription} onChange={handleChange} rows={3} className="w-full resize-none" />
+                                <p className="mt-1 text-xs text-neutral-500">{formData.metaDescription.length}/160</p>
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-medium text-neutral-400 mb-2">Google Preview</h3>
+                                <div className="p-4 rounded-lg bg-white/5 border border-dark-700">
+                                    <p className="text-sm text-primary-400 truncate">takeweb.in/blog/{formData.slug}</p>
+                                    <p className="text-base text-blue-400 truncate mt-0.5">{formData.metaTitle || formData.title || "Post Title"}</p>
+                                    <p className="text-xs text-neutral-500 mt-1 line-clamp-2">{formData.metaDescription || formData.excerpt || "Description..."}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* SEO */}
-                    <div className="card">
-                        <h2 className="text-lg font-semibold text-white mb-4">SEO Settings</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">
-                                    Meta Title
-                                </label>
-                                <input
-                                    type="text"
-                                    name="metaTitle"
-                                    value={formData.metaTitle}
-                                    onChange={handleChange}
-                                    placeholder="SEO title (defaults to post title)"
-                                    className="w-full"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">
-                                    Meta Description
-                                </label>
-                                <textarea
-                                    name="metaDescription"
-                                    value={formData.metaDescription}
-                                    onChange={handleChange}
-                                    placeholder="SEO description for search engines..."
-                                    rows={2}
-                                    className="w-full resize-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Sidebar */}
                 <div className="space-y-6">
-                    {/* Publish Settings */}
                     <div className="card">
-                        <h2 className="text-lg font-semibold text-white mb-4">Publish</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">
-                                    Status
-                                </label>
-                                <select
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleChange}
-                                    className="w-full"
-                                >
-                                    <option value="DRAFT">Draft</option>
-                                    <option value="PUBLISHED">Published</option>
-                                    <option value="ARCHIVED">Archived</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-1.5">
-                                    Category
-                                </label>
-                                <select
-                                    name="categoryId"
-                                    value={formData.categoryId || ""}
-                                    onChange={handleChange}
-                                    className="w-full"
-                                >
-                                    <option value="">Select category</option>
-                                    {categories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Featured Image */}
-                    <div className="card">
-                        <h2 className="text-lg font-semibold text-white mb-4">Cover Image</h2>
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-300 mb-1.5">
-                                Image URL
-                            </label>
-                            <input
-                                type="text"
-                                name="coverImage"
-                                value={formData.coverImage}
-                                onChange={handleChange}
-                                placeholder="https://example.com/image.jpg"
-                                className="w-full text-sm"
-                            />
-                        </div>
+                        <h2 className="text-sm font-semibold text-white mb-3">Cover Image</h2>
                         {formData.coverImage ? (
-                            <div className="mt-3 aspect-video rounded-lg overflow-hidden bg-dark-700">
-                                <img
-                                    src={formData.coverImage}
-                                    alt="Cover preview"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
-                                />
+                            <div className="relative group rounded-lg overflow-hidden">
+                                <img src={formData.coverImage} alt="Cover" className="w-full h-40 object-cover" />
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <button onClick={() => setFormData((prev) => ({ ...prev, coverImage: "" }))} className="btn-icon text-white"><X size={18} /></button>
+                                </div>
                             </div>
                         ) : (
-                            <div className="mt-3 aspect-video bg-dark-700 rounded-lg flex items-center justify-center border-2 border-dashed border-neutral-700">
-                                <div className="text-center">
-                                    <ImageIcon className="mx-auto text-neutral-500 mb-2" size={32} />
-                                    <p className="text-sm text-neutral-500">Enter URL above</p>
-                                </div>
+                            <div onDrop={handleCoverDrop} onDragOver={(e) => e.preventDefault()} className="border-2 border-dashed border-dark-600 rounded-lg p-6 text-center hover:border-primary-500/50 transition-colors">
+                                <Upload size={24} className="mx-auto mb-2 text-neutral-500" />
+                                <p className="text-xs text-neutral-500">Drag & drop or paste URL</p>
+                                <input type="text" placeholder="https://..." value={formData.coverImage} onChange={(e) => setFormData((prev) => ({ ...prev, coverImage: e.target.value }))} className="w-full mt-2 text-xs" />
                             </div>
                         )}
                     </div>
+
+                    <div className="card">
+                        <h2 className="text-sm font-semibold text-white mb-3">Category</h2>
+                        <select name="categoryId" value={formData.categoryId} onChange={handleChange} className="w-full">
+                            <option value="">Select...</option>
+                            {categories.map((cat) => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+                        </select>
+                    </div>
+
+                    <div className="card">
+                        <h2 className="text-sm font-semibold text-white mb-3">Tags</h2>
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                            {tags.map((tag) => (
+                                <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-500/15 text-primary-400 text-xs">
+                                    <Tag size={10} />{tag}
+                                    <button onClick={() => removeTag(tag)} className="hover:text-white"><X size={10} /></button>
+                                </span>
+                            ))}
+                        </div>
+                        <input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleTagKeyDown} placeholder="Add tag, press Enter" className="w-full text-sm" />
+                    </div>
+
+                    <div className="card">
+                        <h2 className="text-sm font-semibold text-white mb-3">Status</h2>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex items-center justify-between">
+                                <span className="text-neutral-400">Status</span>
+                                <span className={`badge ${formData.status === "published" ? "badge-success" : "badge-warning"}`}>
+                                    {formData.status === "published" ? "Published" : "Draft"}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </form>
+            </div>
         </div>
     );
 }

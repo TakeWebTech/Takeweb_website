@@ -173,4 +173,33 @@ export const endpoints = {
         upload: '/api/v1/media/upload',
         delete: (id: string) => `/api/v1/media/${id}`,
     },
+    // Activity
+    activity: {
+        list: '/api/v1/activity',
+        get: (id: string) => `/api/v1/activity/${id}`,
+    },
+    // Users
+    users: {
+        list: '/api/v1/users',
+        create: '/api/v1/users',
+        get: (id: string) => `/api/v1/users/${id}`,
+        update: (id: string) => `/api/v1/users/${id}`,
+        delete: (id: string) => `/api/v1/users/${id}`,
+        invite: '/api/v1/users/invite',
+    },
+    // Testimonials
+    testimonials: {
+        list: '/api/v1/testimonials',
+        adminList: '/api/v1/testimonials/admin/all',
+        create: '/api/v1/testimonials/admin',
+        get: (id: string) => `/api/v1/testimonials/admin/${id}`,
+        update: (id: string) => `/api/v1/testimonials/admin/${id}`,
+        delete: (id: string) => `/api/v1/testimonials/admin/${id}`,
+    },
+    // Pages
+    pages: {
+        list: '/api/v1/pages',
+        get: (slug: string) => `/api/v1/pages/${slug}`,
+        update: (slug: string) => `/api/v1/pages/${slug}`,
+    },
 };

@@ -25,6 +25,8 @@ import {
     X,
     ChevronDown,
     ExternalLink,
+    Activity,
+    Shield,
 } from "lucide-react";
 
 /* ─── nav data ─── */
@@ -52,11 +54,13 @@ const navSections = [
             { name: "Careers", href: "/dashboard/careers", icon: UserPlus },
             { name: "Contact", href: "/dashboard/contact", icon: MessageSquare },
             { name: "Media", href: "/dashboard/media", icon: Image },
+            { name: "Activity Log", href: "/dashboard/activity", icon: Activity },
         ],
     },
     {
         label: "System",
         items: [
+            { name: "Users", href: "/dashboard/users", icon: Shield },
             { name: "Settings", href: "/dashboard/settings", icon: Settings },
         ],
     },
