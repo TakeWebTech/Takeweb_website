@@ -11,6 +11,7 @@ import { ProjectsModule } from './projects';
 import { TeamModule } from './team';
 import { CareersModule } from './careers';
 import { MediaModule } from './media';
+import { SeoModule } from './seo';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MediaModule } from './media';
     TeamModule,
     CareersModule,
     MediaModule,
+    SeoModule,
   ],
   controllers: [AppController],
   providers: [AppService],

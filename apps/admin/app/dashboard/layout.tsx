@@ -27,6 +27,7 @@ import {
     ExternalLink,
     Activity,
     Shield,
+    SearchCheck,
 } from "lucide-react";
 
 /* ─── nav data ─── */
@@ -45,6 +46,7 @@ const navSections = [
             { name: "Services", href: "/dashboard/services", icon: Briefcase },
             { name: "Projects", href: "/dashboard/projects", icon: FolderOpen },
             { name: "Testimonials", href: "/dashboard/testimonials", icon: Quote },
+            { name: "SEO Engine", href: "/dashboard/seo", icon: SearchCheck },
         ],
     },
     {
