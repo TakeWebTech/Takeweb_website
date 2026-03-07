@@ -38,9 +38,43 @@ export class CreateKeywordTrackingDto {
     isTracking?: boolean;
 }
 
-export class UpdateKeywordTrackingDto extends CreateKeywordTrackingDto {
+export class UpdateKeywordTrackingDto {
     @IsOptional()
+    @IsString()
+    @MaxLength(255)
     keyword?: string;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    searchVolume?: number;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    @Max(100)
+    difficulty?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    cpc?: number;
+
+    @IsOptional()
+    @IsUrl()
+    targetUrl?: string;
+
+    @IsOptional()
+    @IsString()
+    entityType?: string;
+
+    @IsOptional()
+    @IsString()
+    entityId?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    isTracking?: boolean;
 }
 
 export class BulkAddKeywordsDto {

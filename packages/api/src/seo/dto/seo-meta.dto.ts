@@ -114,15 +114,105 @@ export class CreateSeoMetaDto {
     schemaData?: Record<string, any>;
 }
 
-export class UpdateSeoMetaDto extends CreateSeoMetaDto {
+export class UpdateSeoMetaDto {
     @IsOptional()
+    @IsString()
     entityType?: string;
 
     @IsOptional()
+    @IsString()
     entityId?: string;
 
     @IsOptional()
+    @IsString()
     entitySlug?: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    focusKeywords?: string[];
+
+    @IsOptional()
+    @IsBoolean()
+    pillarContent?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    cornerstone?: boolean;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(70)
+    title?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(160)
+    description?: string;
+
+    @IsOptional()
+    @IsUrl()
+    canonicalUrl?: string;
+
+    @IsOptional()
+    @IsObject()
+    metaRobots?: Record<string, any>;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(95)
+    ogTitle?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    ogDescription?: string;
+
+    @IsOptional()
+    @IsString()
+    ogImage?: string;
+
+    @IsOptional()
+    @IsInt()
+    ogImageWidth?: number;
+
+    @IsOptional()
+    @IsInt()
+    ogImageHeight?: number;
+
+    @IsOptional()
+    @IsString()
+    ogType?: string;
+
+    @IsOptional()
+    @IsString()
+    ogVideo?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(70)
+    twitterTitle?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    twitterDescription?: string;
+
+    @IsOptional()
+    @IsString()
+    twitterImage?: string;
+
+    @IsOptional()
+    @IsString()
+    twitterCardType?: string;
+
+    @IsOptional()
+    @IsString()
+    schemaType?: string;
+
+    @IsOptional()
+    @IsObject()
+    schemaData?: Record<string, any>;
 }
 
 export class AnalyzeContentDto {

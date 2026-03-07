@@ -55,6 +55,8 @@ export class SeoAuditCategory {
     name: string;
     score: number;
     maxScore: number;
+    passed: number;
+    failed: number;
     issues: SeoAuditIssue[];
 }
 

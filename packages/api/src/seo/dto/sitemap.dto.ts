@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsArray, IsIn, IsUrl, IsDateString, MaxLength, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsArray, IsIn, IsUrl, IsDateString, IsInt, MaxLength, Min, Max } from 'class-validator';
 
 export class CreateSitemapEntryDto {
     @IsUrl()
@@ -78,9 +78,68 @@ export class CreateSitemapEntryDto {
     }>;
 }
 
-export class UpdateSitemapEntryDto extends CreateSitemapEntryDto {
+export class UpdateSitemapEntryDto {
     @IsOptional()
+    @IsUrl()
     url?: string;
+
+    @IsOptional()
+    @IsString()
+    entityType?: string;
+
+    @IsOptional()
+    @IsString()
+    entityId?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    includeInSitemap?: boolean;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    @Max(1)
+    priority?: number;
+
+    @IsOptional()
+    @IsString()
+    @IsIn(['always', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'never'])
+    changeFrequency?: string;
+
+    @IsOptional()
+    @IsDateString()
+    lastModified?: string;
+
+    @IsOptional()
+    @IsString()
+    @IsIn(['default', 'news', 'image', 'video'])
+    sitemapType?: string;
+
+    @IsOptional()
+    @IsString()
+    newsTitle?: string;
+
+    @IsOptional()
+    @IsDateString()
+    newsPublicationDate?: string;
+
+    @IsOptional()
+    @IsArray()
+    images?: Array<{
+        url: string;
+        title?: string;
+        caption?: string;
+    }>;
+
+    @IsOptional()
+    @IsArray()
+    videos?: Array<{
+        url: string;
+        title: string;
+        description: string;
+        thumbnailUrl: string;
+        duration?: number;
+    }>;
 }
 
 export class SitemapSettingsDto {

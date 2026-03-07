@@ -30,15 +30,37 @@ export class CreateSchemaTemplateDto {
     isActive?: boolean;
 }
 
-export class UpdateSchemaTemplateDto extends CreateSchemaTemplateDto {
+export class UpdateSchemaTemplateDto {
     @IsOptional()
+    @IsString()
+    @MaxLength(100)
     name?: string;
 
     @IsOptional()
+    @IsString()
     schemaType?: string;
 
     @IsOptional()
+    @IsString()
+    @MaxLength(500)
+    description?: string;
+
+    @IsOptional()
+    @IsObject()
     template?: Record<string, any>;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    entityTypes?: string[];
+
+    @IsOptional()
+    @IsBoolean()
+    isDefault?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
 }
 
 // Pre-defined schema types

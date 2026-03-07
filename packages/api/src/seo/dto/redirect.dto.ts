@@ -46,12 +46,52 @@ export class CreateRedirectDto {
     note?: string;
 }
 
-export class UpdateRedirectDto extends CreateRedirectDto {
+export class UpdateRedirectDto {
     @IsOptional()
+    @IsString()
+    @MaxLength(2048)
     sourceUrl?: string;
 
     @IsOptional()
+    @IsString()
+    @MaxLength(2048)
     targetUrl?: string;
+
+    @IsOptional()
+    @IsInt()
+    @IsIn([301, 302, 307, 308, 410, 451])
+    type?: number;
+
+    @IsOptional()
+    @IsString()
+    @IsIn(['exact', 'contains', 'regex', 'starts_with', 'ends_with'])
+    matchType?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    ignoreCase?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    ignoreSlash?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    queryPassthrough?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    priority?: number;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(500)
+    note?: string;
 }
 
 export class BulkCreateRedirectDto {
