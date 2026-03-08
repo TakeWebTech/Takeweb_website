@@ -705,6 +705,7 @@
 }
 
 /* ===== Modal ===== */
+/* Custom modal pattern (modal-backdrop > modal) */
 .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -718,7 +719,8 @@
     padding: 1rem;
 }
 
-.modal {
+.modal-backdrop > .modal {
+    position: relative;
     background: var(--color-dark-850);
     border: 1px solid var(--color-dark-700);
     border-radius: 1rem;
@@ -729,6 +731,57 @@
     overflow-y: auto;
     animation: scale-in 0.2s ease-out;
     box-shadow: 0 24px 64px oklch(0% 0 0 / 0.5);
+}
+
+/* DaisyUI modal pattern (modal.modal-open > modal-box) */
+.modal.modal-open {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: oklch(0% 0 0 / 0.6);
+    backdrop-filter: blur(4px);
+    animation: fade-in 0.2s ease-out;
+}
+
+.modal-box {
+    position: relative;
+    z-index: 101;
+    background: var(--color-dark-850);
+    border: 1px solid var(--color-dark-700);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    max-width: 32rem;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: scale-in 0.2s ease-out;
+    box-shadow: 0 24px 64px oklch(0% 0 0 / 0.5);
+}
+
+.modal-box.max-w-3xl {
+    max-width: 48rem;
+}
+
+.modal-action {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-dark-700);
+}
+
+/* Modal backdrop inside DaisyUI modal */
+.modal.modal-open > .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    background: transparent;
+    cursor: pointer;
 }
 
 /* ===== Tooltip ===== */
