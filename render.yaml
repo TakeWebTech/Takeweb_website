@@ -1,0 +1,27 @@
+# Render.com Configuration for TakeWeb API
+# https://render.com/docs/blueprint-spec
+
+services:
+  # NestJS API Backend
+  - type: web
+    name: takeweb-api
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: packages/api
+    buildCommand: npm install --include=dev && npx prisma generate && npx nest build
+    startCommand: node dist/main
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3002
+      - key: DATABASE_URL
+        sync: false # Set this in Render dashboard from Neon
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false # Set after Vercel deployment
+      - key: ADMIN_URL
+        sync: false # Set after Vercel deployment

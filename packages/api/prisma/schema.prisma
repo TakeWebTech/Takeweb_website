@@ -1,0 +1,820 @@
+// Prisma Schema for TakeWeb Enterprise CMS
+// Database: PostgreSQL (Neon for free tier)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ User & Auth ============
+
+enum Role {
+  ADMIN
+  EDITOR
+  AUTHOR
+  VIEWER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          Role      @default(AUTHOR)
+  avatar        String?
+  bio           String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  blogPosts     BlogPost[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ============ Blog System ============
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model BlogPost {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  excerpt     String?
+  content     String     @db.Text
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  viewCount   Int        @default(0)
+  authorId    String
+  categoryId  String?
+  
+  // Enhanced SEO Fields
+  metaTitle       String?
+  metaDescription String?
+  focusKeywords   String[]
+  ogImage         String?
+  ogTitle         String?
+  ogDescription   String?
+  twitterImage    String?
+  canonicalUrl    String?
+  noIndex         Boolean   @default(false)
+  noFollow        Boolean   @default(false)
+  schemaType      String?   @default("Article")
+  schemaData      Json?
+  seoScore        Int       @default(0)
+  readabilityScore Int      @default(0)
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  author    User      @relation(fields: [authorId], references: [id])
+  category  Category? @relation(fields: [categoryId], references: [id])
+  tags      TagsOnPosts[]
+
+  @@index([status, publishedAt])
+  @@map("blog_posts")
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  parentId    String?
+  createdAt   DateTime   @default(now())
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  posts    BlogPost[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  posts TagsOnPosts[]
+
+  @@map("tags")
+}
+
+model TagsOnPosts {
+  postId String
+  tagId  String
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("tags_on_posts")
+}
+
+// ============ Services ============
+
+model Service {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  shortDescription String
+  content         String   @db.Text
+  icon            String?
+  gradient        String?  // e.g., "from-blue-500 to-cyan-500"
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  
+  // Enhanced SEO Fields
+  metaTitle       String?
+  metaDescription String?
+  focusKeywords   String[]
+  ogImage         String?
+  ogTitle         String?
+  ogDescription   String?
+  canonicalUrl    String?
+  noIndex         Boolean  @default(false)
+  schemaType      String?  @default("Service")
+  schemaData      Json?
+  seoScore        Int      @default(0)
+  
+  benefits        String[] // Array of benefit strings
+  technologies    String[] // Array of technology names
+  useCases        String[] // Array of use case descriptions
+  faqs            Json?    // Array of { question, answer } for FAQ schema
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  projects Project[]
+
+  @@map("services")
+}
+
+// ============ Projects / Case Studies ============
+
+model Project {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  client       String?
+  industry     String?
+  description  String   @db.Text
+  challenge    String?  @db.Text
+  solution     String?  @db.Text
+  outcome      String?
+  technologies String[]
+  coverImage   String?
+  isFeatured   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  serviceId    String?
+  
+  // Enhanced SEO Fields
+  metaTitle       String?
+  metaDescription String?
+  focusKeywords   String[]
+  ogImage         String?
+  ogTitle         String?
+  ogDescription   String?
+  canonicalUrl    String?
+  noIndex         Boolean  @default(false)
+  schemaType      String?  @default("Article")
+  schemaData      Json?
+  seoScore        Int      @default(0)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  service Service?       @relation(fields: [serviceId], references: [id])
+  images  ProjectImage[]
+
+  @@map("projects")
+}
+
+model ProjectImage {
+  id        String  @id @default(cuid())
+  projectId String
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_images")
+}
+
+// ============ Careers ============
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+model Career {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  department   String
+  location     String
+  type         JobType  @default(FULL_TIME)
+  isRemote     Boolean  @default(false)
+  description  String   @db.Text
+  requirements String?  @db.Text
+  benefits     String[]
+  minSalary    Int?
+  maxSalary    Int?
+  deadline     DateTime?
+  isActive     Boolean  @default(true)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  applications JobApplication[]
+
+  @@map("careers")
+}
+
+model JobApplication {
+  id         String   @id @default(cuid())
+  careerId   String
+  firstName  String
+  lastName   String
+  email      String
+  phone      String?
+  resumeUrl  String?
+  coverLetter String? @db.Text
+  status     String   @default("NEW") // NEW, REVIEWING, INTERVIEWED, ACCEPTED, REJECTED
+  createdAt  DateTime @default(now())
+
+  career Career @relation(fields: [careerId], references: [id])
+
+  @@map("job_applications")
+}
+
+// ============ Testimonials ============
+
+model Testimonial {
+  id         String   @id @default(cuid())
+  name       String
+  position   String?
+  company    String?
+  content    String   @db.Text
+  avatar     String?
+  rating     Int?     @default(5)
+  isApproved Boolean  @default(false)
+  isFeatured Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@map("testimonials")
+}
+
+// ============ Team ============
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  name        String
+  position    String
+  department  String?
+  bio         String?  @db.Text
+  photo       String?
+  linkedin    String?
+  twitter     String?
+  email       String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("team_members")
+}
+
+// ============ Contact Submissions ============
+
+enum ContactStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+model ContactSubmission {
+  id        String        @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  company   String?
+  service   String?
+  message   String        @db.Text
+  status    ContactStatus @default(NEW)
+  notes     String?       @db.Text
+  createdAt DateTime      @default(now())
+
+  @@map("contact_submissions")
+}
+
+// ============ Media Library ============
+
+model Media {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  url          String
+  cloudinaryId String?
+  mimeType     String
+  fileSize     Int
+  width        Int?
+  height       Int?
+  alt          String?
+  folder       String?
+  createdAt    DateTime @default(now())
+
+  @@map("media")
+}
+
+// ============ Site Settings ============
+
+model SiteSetting {
+  key         String   @id
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ============ Newsletter ============
+
+model NewsletterSubscriber {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  isActive    Boolean  @default(true)
+  subscribedAt DateTime @default(now())
+  unsubscribedAt DateTime?
+
+  @@map("newsletter_subscribers")
+}
+
+// ============ SEO ENGINE (Rank Math PRO Features) ============
+
+// Global SEO Settings
+model SeoSettings {
+  id                    String   @id @default(cuid())
+  
+  // General Settings
+  siteTitle             String?
+  titleSeparator        String   @default("|")
+  metaDescription       String?
+  
+  // Homepage SEO
+  homeTitle             String?
+  homeDescription       String?
+  homeKeywords          String[]
+  
+  // Social Profiles
+  facebookUrl           String?
+  twitterUsername       String?
+  linkedinUrl           String?
+  instagramUrl          String?
+  youtubeUrl            String?
+  pinterestUrl          String?
+  
+  // Webmaster Verification
+  googleVerification    String?
+  bingVerification      String?
+  yandexVerification    String?
+  pinterestVerification String?
+  baiduVerification     String?
+  
+  // Analytics & Search Console
+  googleAnalyticsId     String?
+  googleTagManagerId    String?
+  googleSearchConsole   String?
+  
+  // Schema.org Organization
+  orgName               String?
+  orgLogo               String?
+  orgUrl                String?
+  orgType               String?  @default("Organization")
+  
+  // Local SEO
+  localBusinessType     String?
+  streetAddress         String?
+  addressLocality       String?
+  addressRegion         String?
+  postalCode            String?
+  addressCountry        String?
+  phone                 String?
+  priceRange            String?
+  geo                   Json?    // { latitude, longitude }
+  openingHours          Json?    // Array of hours
+  
+  // Robots Settings
+  robotsIndex           Boolean  @default(true)
+  robotsFollow          Boolean  @default(true)
+  robotsArchive         Boolean  @default(true)
+  robotsSnippet         Boolean  @default(true)
+  robotsImageIndex      Boolean  @default(true)
+  
+  // Advanced
+  breadcrumbsEnabled    Boolean  @default(true)
+  breadcrumbsSeparator  String   @default("»")
+  noIndexEmptyArchives  Boolean  @default(true)
+  removeStopwords       Boolean  @default(false)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("seo_settings")
+}
+
+// SEO Metadata per Page/Entity
+model SeoMeta {
+  id                String    @id @default(cuid())
+  
+  // Reference to content (polymorphic)
+  entityType        String    // "page", "post", "service", "project", "career"
+  entityId          String
+  entitySlug        String
+  
+  // Focus Keywords (multiple like Rank Math PRO)
+  focusKeywords     String[]
+  pillarContent     Boolean   @default(false)
+  cornerstone       Boolean   @default(false)
+  
+  // Basic SEO
+  title             String?
+  description       String?
+  canonicalUrl      String?
+  
+  // Advanced Meta
+  metaRobots        Json?     // { index, follow, noarchive, nosnippet, etc. }
+  
+  // Open Graph
+  ogTitle           String?
+  ogDescription     String?
+  ogImage           String?
+  ogImageWidth      Int?
+  ogImageHeight     Int?
+  ogType            String?   @default("article")
+  ogVideo           String?
+  
+  // Twitter Card
+  twitterTitle      String?
+  twitterDescription String?
+  twitterImage      String?
+  twitterCardType   String?   @default("summary_large_image")
+  
+  // Schema Markup (JSON-LD)
+  schemaType        String?   // "Article", "Product", "LocalBusiness", etc.
+  schemaData        Json?     // Full schema JSON
+  
+  // SEO Score & Analysis
+  seoScore          Int?      @default(0)  // 0-100
+  readabilityScore  Int?      @default(0)  // 0-100
+  lastAnalyzedAt    DateTime?
+  analysisData      Json?     // Detailed analysis results
+  
+  // Content Stats
+  wordCount         Int?      @default(0)
+  characterCount    Int?      @default(0)
+  sentenceCount     Int?      @default(0)
+  paragraphCount    Int?      @default(0)
+  headingCount      Json?     // { h1: 0, h2: 0, h3: 0, etc. }
+  imageCount        Int?      @default(0)
+  linkCount         Json?     // { internal: 0, external: 0, nofollow: 0 }
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([entityType, entitySlug])
+  @@map("seo_meta")
+}
+
+// Focus Keywords Tracking
+model KeywordTracking {
+  id              String    @id @default(cuid())
+  keyword         String
+  searchVolume    Int?
+  difficulty      Int?      // 0-100
+  cpc             Float?
+  trend           Json?     // Monthly trend data
+  
+  // Rankings
+  currentRank     Int?
+  previousRank    Int?
+  bestRank        Int?
+  rankHistory     Json?     // Array of { date, rank }
+  
+  // Associated content
+  targetUrl       String?
+  entityType      String?
+  entityId        String?
+  
+  // Tracking status
+  isTracking      Boolean   @default(true)
+  lastCheckedAt   DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([keyword, targetUrl])
+  @@map("keyword_tracking")
+}
+
+// URL Redirections Manager
+model Redirect {
+  id              String    @id @default(cuid())
+  
+  sourceUrl       String
+  targetUrl       String
+  type            Int       @default(301) // 301, 302, 307, 308, 410, 451
+  
+  // Matching options
+  matchType       String    @default("exact") // "exact", "contains", "regex", "starts_with", "ends_with"
+  ignoreCase      Boolean   @default(true)
+  ignoreSlash     Boolean   @default(true)
+  
+  // Query string handling
+  queryPassthrough Boolean   @default(true)
+  
+  // Stats
+  hitCount        Int       @default(0)
+  lastAccessedAt  DateTime?
+  
+  // Status
+  isActive        Boolean   @default(true)
+  priority        Int       @default(0)
+  
+  // Notes
+  note            String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([sourceUrl])
+  @@index([isActive, type])
+  @@map("redirects")
+}
+
+// 404 Error Monitor
+model Error404Log {
+  id              String    @id @default(cuid())
+  
+  url             String
+  referrer        String?
+  userAgent       String?
+  ipAddress       String?
+  
+  // Stats
+  hitCount        Int       @default(1)
+  firstSeenAt     DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  
+  // Resolution
+  isResolved      Boolean   @default(false)
+  resolvedAt      DateTime?
+  redirectToId    String?   // Link to Redirect if created
+  
+  createdAt       DateTime  @default(now())
+
+  @@unique([url])
+  @@index([hitCount])
+  @@index([isResolved])
+  @@map("error_404_log")
+}
+
+// Sitemap Configuration
+model SitemapEntry {
+  id              String    @id @default(cuid())
+  
+  url             String    @unique
+  entityType      String?   // "page", "post", "service", etc.
+  entityId        String?
+  
+  // Sitemap settings
+  includeInSitemap Boolean   @default(true)
+  priority        Float     @default(0.5)
+  changeFrequency String    @default("weekly") // "always", "hourly", "daily", "weekly", "monthly", "yearly", "never"
+  lastModified    DateTime?
+  
+  // Sitemap type
+  sitemapType     String    @default("default") // "default", "news", "image", "video"
+  
+  // For news sitemap
+  newsTitle       String?
+  newsPublicationDate DateTime?
+  
+  // For image sitemap
+  images          Json?     // Array of { url, title, caption }
+  
+  // For video sitemap
+  videos          Json?     // Array of { url, title, description, thumbnail, duration }
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([sitemapType, includeInSitemap])
+  @@map("sitemap_entries")
+}
+
+// Schema Templates (Pre-built schemas)
+model SchemaTemplate {
+  id              String    @id @default(cuid())
+  
+  name            String
+  schemaType      String    // "Article", "Product", "FAQPage", "HowTo", etc.
+  description     String?
+  template        Json      // Schema template with placeholders
+  
+  // Assignment
+  entityTypes     String[]  // Which entity types can use this
+  isDefault       Boolean   @default(false)
+  
+  isActive        Boolean   @default(true)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("schema_templates")
+}
+
+// Internal Link Suggestions
+model LinkSuggestion {
+  id              String    @id @default(cuid())
+  
+  // Source content
+  sourceType      String
+  sourceId        String
+  sourceUrl       String
+  
+  // Suggested target
+  targetType      String
+  targetId        String
+  targetUrl       String
+  
+  // Suggestion details
+  anchorText      String?
+  relevanceScore  Float     @default(0) // 0-1
+  matchedKeywords String[]
+  
+  // Status
+  isApplied       Boolean   @default(false)
+  isDismissed     Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([sourceType, sourceId, targetType, targetId])
+  @@index([sourceType, sourceId])
+  @@map("link_suggestions")
+}
+
+// SEO Audit Reports
+model SeoAudit {
+  id              String    @id @default(cuid())
+  
+  // Overall scores
+  overallScore    Int       @default(0)
+  technicalScore  Int       @default(0)
+  contentScore    Int       @default(0)
+  socialScore     Int       @default(0)
+  
+  // Issue counts
+  criticalIssues  Int       @default(0)
+  warnings        Int       @default(0)
+  suggestions     Int       @default(0)
+  passed          Int       @default(0)
+  
+  // Detailed results
+  results         Json      // Full audit results
+  
+  // Crawl stats
+  pagesCrawled    Int       @default(0)
+  imagesAnalyzed  Int       @default(0)
+  linksAnalyzed   Int       @default(0)
+  
+  // Status
+  status          String    @default("pending") // "pending", "running", "completed", "failed"
+  startedAt       DateTime?
+  completedAt     DateTime?
+  errorMessage    String?
+  
+  createdAt       DateTime  @default(now())
+
+  @@map("seo_audits")
+}
+
+// Content Analysis Rules (customizable)
+model SeoRule {
+  id              String    @id @default(cuid())
+  
+  // Rule identification
+  ruleKey         String    @unique
+  name            String
+  description     String?
+  category        String    // "basic", "readability", "social", "technical", "advanced"
+  
+  // Rule configuration
+  isActive        Boolean   @default(true)
+  weight          Int       @default(1) // Score weight
+  severity        String    @default("warning") // "error", "warning", "info"
+  
+  // Thresholds
+  minValue        Float?
+  maxValue        Float?
+  targetValue     Float?
+  
+  // Messages
+  passMessage     String?
+  failMessage     String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("seo_rules")
+}
+
+// Content AI Suggestions Log
+model ContentSuggestion {
+  id              String    @id @default(cuid())
+  
+  entityType      String
+  entityId        String
+  
+  suggestionType  String    // "title", "description", "content", "keywords", "internal_links"
+  originalContent String?   @db.Text
+  suggestedContent String   @db.Text
+  
+  // AI Details
+  model           String?
+  prompt          String?   @db.Text
+  
+  // Status
+  isApplied       Boolean   @default(false)
+  isDismissed     Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+
+  @@index([entityType, entityId])
+  @@map("content_suggestions")
+}
+
+// Analytics Snapshots (for dashboard)
+model AnalyticsSnapshot {
+  id              String    @id @default(cuid())
+  
+  date            DateTime  @db.Date
+  
+  // Traffic metrics
+  pageViews       Int       @default(0)
+  uniqueVisitors  Int       @default(0)
+  avgSessionDuration Float? 
+  bounceRate      Float?
+  
+  // Search metrics
+  impressions     Int       @default(0)
+  clicks          Int       @default(0)
+  ctr             Float?    // Click-through rate
+  avgPosition     Float?
+  
+  // Top data
+  topPages        Json?     // Array of { url, views }
+  topKeywords     Json?     // Array of { keyword, impressions, clicks, position }
+  topReferrers    Json?     // Array of { source, visits }
+  topCountries    Json?     // Array of { country, visits }
+  
+  createdAt       DateTime  @default(now())
+
+  @@unique([date])
+  @@index([date])
+  @@map("analytics_snapshots")
+}
