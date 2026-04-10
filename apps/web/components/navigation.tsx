@@ -284,14 +284,6 @@ export function Navigation() {
                         >
                             Contact
                         </Link>
-
-                        {/* Contact */}
-                        <Link
-                            href="/contact"
-                            className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium text-sm"
-                        >
-                            Contact
-                        </Link>
                     </div>
 
                     {/* Right Section */}

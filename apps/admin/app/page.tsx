@@ -16,6 +16,7 @@ import {
     Users,
     Fingerprint,
     Loader2,
+    AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
