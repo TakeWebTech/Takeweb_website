@@ -1,22 +1,36 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Image from "next/image";
+import { 
+    Cloud, 
+    Database, 
+    Server, 
+    Shield, 
+    Globe, 
+    Cpu, 
+    Activity, 
+    Box, 
+    Layers, 
+    Hexagon, 
+    Triangle, 
+    Circle, 
+    Globe2 
+} from "lucide-react";
 
 const partners = [
-    { name: "AWS", logo: "/partners/aws.svg" },
-    { name: "Google Cloud", logo: "/partners/gcp.svg" },
-    { name: "Microsoft Azure", logo: "/partners/azure.svg" },
-    { name: "Oracle", logo: "/partners/oracle.svg" },
-    { name: "Salesforce", logo: "/partners/salesforce.svg" },
-    { name: "SAP", logo: "/partners/sap.svg" },
-    { name: "IBM", logo: "/partners/ibm.svg" },
-    { name: "Red Hat", logo: "/partners/redhat.svg" },
-    { name: "TechVentures", logo: "/partners/techventures.svg" },
-    { name: "DataFlow", logo: "/partners/dataflow.svg" },
-    { name: "InnovateCorp", logo: "/partners/innovatecorp.svg" },
-    { name: "GlobalStack", logo: "/partners/globalstack.svg" },
-    { name: "PeakSystems", logo: "/partners/peaksystems.svg" },
+    { name: "AWS", icon: Cloud },
+    { name: "Google Cloud", icon: Database },
+    { name: "Microsoft Azure", icon: Server },
+    { name: "Oracle", icon: Shield },
+    { name: "Salesforce", icon: Globe },
+    { name: "SAP", icon: Cpu },
+    { name: "IBM", icon: Activity },
+    { name: "Red Hat", icon: Box },
+    { name: "TechVentures", icon: Layers },
+    { name: "DataFlow", icon: Hexagon },
+    { name: "InnovateCorp", icon: Triangle },
+    { name: "GlobalStack", icon: Circle },
+    { name: "PeakSystems", icon: Globe2 },
 ];
 
 export function PartnerSlider() {
@@ -58,7 +72,7 @@ export function PartnerSlider() {
                 </p>
             </div>
 
-            <div className="relative">
+            <div className="relative flex overflow-hidden">
                 {/* Gradient Fade Edges */}
                 <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[var(--bg-secondary)] to-transparent z-10 pointer-events-none" />
                 <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[var(--bg-secondary)] to-transparent z-10 pointer-events-none" />
@@ -72,14 +86,14 @@ export function PartnerSlider() {
                     {partners.map((partner, index) => (
                         <div
                             key={`${partner.name}-${index}`}
-                            className="flex items-center justify-center h-12 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0"
+                            className="flex items-center justify-center h-12 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0 cursor-pointer"
                         >
-                            {/* Placeholder logos - you can replace with actual partner logos */}
-                            <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                                <div className="w-8 h-8 rounded-lg bg-[var(--bg-tertiary)] flex items-center justify-center text-xs font-bold">
-                                    {partner.name.charAt(0)}
-                                </div>
-                                <span className="text-sm font-medium whitespace-nowrap">
+                            <div className="flex items-center gap-3 text-[var(--text-muted)] group">
+                                <partner.icon 
+                                    size={30} 
+                                    className="text-[var(--text-secondary)] group-hover:text-amber-500 transition-colors" 
+                                />
+                                <span className="text-xl font-bold whitespace-nowrap tracking-tight">
                                     {partner.name}
                                 </span>
                             </div>
