@@ -134,6 +134,7 @@ const megaMenuData = {
             { name: "Leadership", href: "/about#leadership" },
             { name: "Security & Compliance", href: "/security" },
             { name: "Partnerships", href: "/partnerships" },
+            { name: "Careers", href: "/careers" },
         ],
     },
 };
