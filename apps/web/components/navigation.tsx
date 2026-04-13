@@ -130,10 +130,11 @@ const megaMenuData = {
         title: "Company",
         items: [
             { name: "About TakeWeb", href: "/about" },
-            { name: "Vision & Values", href: "/about#values" },
+            { name: "Mission & Vision", href: "/about#mission" },
             { name: "Leadership", href: "/about#leadership" },
             { name: "Security & Compliance", href: "/security" },
             { name: "Partnerships", href: "/partnerships" },
+            { name: "Careers", href: "/careers" },
         ],
     },
 };

@@ -32,7 +32,7 @@ const leadership = [
         role: "Co-Founder & Advisor",
         image: "/founder.jpg",
         bio: "Rajesh brings 20+ years of experience in enterprise software and digital transformation. He now serves as a strategic advisor to the team.",
-        email: "advisor@example.com",
+        email: "rajesh@takeweb.in",
         linkedin: "https://linkedin.com/in/rajeshkumar",
         twitter: "https://twitter.com/rajeshkumar",
     },
