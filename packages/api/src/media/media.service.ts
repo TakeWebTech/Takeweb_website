@@ -4,7 +4,7 @@ import { CreateMediaDto, UpdateMediaDto } from './dto';
 
 @Injectable()
 export class MediaService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService) {}
 
     async getAllMedia(folder?: string) {
         const where = folder ? { folder } : {};
@@ -55,13 +55,15 @@ export class MediaService {
         return this.prisma.media.delete({ where: { id } });
     }
 
-    async getFolders() {
+    async getFolders(): Promise<string[]> {
         const result = await this.prisma.media.findMany({
             select: { folder: true },
             distinct: ['folder'],
             where: { folder: { not: null } },
         });
 
-        return result.map((r) => r.folder).filter(Boolean);
+        return result
+            .map((r: { folder: string | null }) => r.folder)
+            .filter((folder:string | null): folder is string => Boolean(folder));
     }
 }

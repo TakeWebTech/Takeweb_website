@@ -1,8 +1,13 @@
-export default function SolutionPage({ params }) {
+export default async function SolutionPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
   return (
     <div style={{ padding: "40px" }}>
-      <h1>{params.slug.replace("-", " ")}</h1>
-      <p>This solution page is dynamically generated.</p>
+      <h1>{slug.replace("-", " ")}</h1>
     </div>
   );
 }
