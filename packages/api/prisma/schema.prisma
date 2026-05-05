@@ -19,6 +19,34 @@ enum Role {
   VIEWER
 }
 
+enum WorkType {
+  ONSITE
+  REMOTE
+  CONTRACT
+  INTERN
+}
+
+enum LifecycleStatus {
+  ACTIVE
+  ON_LEAVE
+  EXITED
+  BLOCKED
+}
+
+enum AccessType {
+  VIEW
+  CREATE
+  EDIT
+  DELETE
+  NONE
+}
+
+enum RuleLevel {
+  GROUP
+  TEAM
+  INDIVIDUAL
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -32,9 +60,34 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Employee Fields
+  employeeId      String?          @unique
+  dateOfBirth     DateTime?
+  joiningDate     DateTime?
+  workType        WorkType         @default(ONSITE)
+  department      String?
+  location        String?
+  phone           String?
+  lifecycleStatus LifecycleStatus  @default(ACTIVE)
+
+  // Custom Role (overrides default Role enum when set)
+  customRoleId    String?
+  customRole      CustomRole?      @relation(fields: [customRoleId], references: [id])
+
+  // Group & Team
+  groupId         String?
+  group           Group?           @relation(fields: [groupId], references: [id])
+  teamId          String?
+  team            Team?            @relation("TeamMembers", fields: [teamId], references: [id])
+
   // Relations
-  blogPosts     BlogPost[]
-  sessions      Session[]
+  blogPosts        BlogPost[]
+  sessions         Session[]
+  managedTeams     Team[]           @relation("TeamManager")
+  ledTeams         Team[]           @relation("TeamLead")
+  auditLogs        AuditLog[]
+  dashboardLayouts DashboardLayout[]
+  individualRules  Rule[]           @relation("IndividualRules")
 
   @@map("users")
 }
@@ -817,4 +870,178 @@ model AnalyticsSnapshot {
   @@unique([date])
   @@index([date])
   @@map("analytics_snapshots")
+}
+
+// ============ Enterprise HR & RBAC ============
+
+// Groups (Departments)
+model Group {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  teams       Team[]
+  members     User[]
+  rules       Rule[]   @relation("GroupRules")
+
+  @@map("groups")
+}
+
+// Teams (within Groups)
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+
+  // Group parent
+  groupId     String
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  // Leadership
+  managerId   String?
+  manager     User?    @relation("TeamManager", fields: [managerId], references: [id])
+  leadId      String?
+  lead        User?    @relation("TeamLead", fields: [leadId], references: [id])
+
+  // Relations
+  members     User[]   @relation("TeamMembers")
+  rules       Rule[]   @relation("TeamRules")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([groupId, name])
+  @@map("teams")
+}
+
+// Permission Definition (Module × AccessType)
+model Permission {
+  id          String     @id @default(cuid())
+  module      String     // "dashboard", "employees", "projects", "reviews", "reports", "settings", etc.
+  accessType  AccessType
+  description String?
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@unique([module, accessType])
+  @@map("permissions")
+}
+
+// Custom Roles
+model CustomRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  isSystem    Boolean  @default(false) // true for Admin/Manager/TeamLead/Employee defaults
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  permissions RolePermission[]
+  users       User[]
+
+  @@map("custom_roles")
+}
+
+// Join table: CustomRole ↔ Permission
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       CustomRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// Rule-Based Access Engine
+model Rule {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean   @default(true)
+  priority    Int       @default(0)
+
+  // Scope
+  level       RuleLevel
+  groupId     String?
+  group       Group?    @relation("GroupRules", fields: [groupId], references: [id], onDelete: Cascade)
+  teamId      String?
+  team        Team?     @relation("TeamRules", fields: [teamId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?     @relation("IndividualRules", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Rule definition
+  module      String    // target module
+  accessType  AccessType // what access to grant/deny
+  effect      String    @default("DENY") // "ALLOW" or "DENY"
+
+  // Conditions (JSON for flexibility)
+  conditions  Json?     // e.g. { "workHoursOnly": true, "roleEquals": "INTERN" }
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([level, isActive])
+  @@map("rules")
+}
+
+// Audit Logs
+model AuditLog {
+  id          String   @id @default(cuid())
+
+  // Who
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  userEmail   String
+  userRole    String
+
+  // What
+  action      String   // "CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "PERMISSION_CHANGE", etc.
+  module      String   // "employees", "auth", "roles", "rules", etc.
+  entityType  String?  // "User", "Group", "Team", etc.
+  entityId    String?
+
+  // Details
+  description String?
+  changes     Json?    // { before: {...}, after: {...} }
+  metadata    Json?    // { ip, userAgent, deviceInfo }
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([module, action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// Dashboard Layouts (per-user widget configuration)
+model DashboardLayout {
+  id          String   @id @default(cuid())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String   @default("Default")
+  isDefault   Boolean  @default(true)
+
+  // Widget configuration
+  widgets     Json     // Array of { widgetId, x, y, w, h, locked, config }
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@map("dashboard_layouts")
 }
