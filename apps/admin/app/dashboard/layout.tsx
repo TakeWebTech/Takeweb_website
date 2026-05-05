@@ -28,6 +28,11 @@ import {
     Activity,
     Shield,
     SearchCheck,
+    Building2,
+    Network,
+    Key,
+    Gavel,
+    UserCog,
 } from "lucide-react";
 
 /* ─── nav data ─── */
@@ -52,6 +57,7 @@ const navSections = [
     {
         label: "Management",
         items: [
+            { name: "Employees", href: "/dashboard/employees", icon: UserCog },
             { name: "Team", href: "/dashboard/team", icon: Users },
             { name: "Careers", href: "/dashboard/careers", icon: UserPlus },
             { name: "Contact", href: "/dashboard/contact", icon: MessageSquare },
@@ -60,9 +66,18 @@ const navSections = [
         ],
     },
     {
+        label: "TWadmin",
+        items: [
+            { name: "Overview", href: "/dashboard/twadmin", icon: Shield },
+            { name: "Groups", href: "/dashboard/twadmin/groups", icon: Building2 },
+            { name: "Teams", href: "/dashboard/twadmin/teams", icon: Network },
+            { name: "Roles", href: "/dashboard/twadmin/roles", icon: Key },
+            { name: "Rules", href: "/dashboard/twadmin/rules", icon: Gavel },
+        ],
+    },
+    {
         label: "System",
         items: [
-            { name: "Users", href: "/dashboard/users", icon: Shield },
             { name: "Settings", href: "/dashboard/settings", icon: Settings },
         ],
     },

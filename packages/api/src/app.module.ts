@@ -12,6 +12,14 @@ import { TeamModule } from './team';
 import { CareersModule } from './careers';
 import { MediaModule } from './media';
 import { SeoModule } from './seo';
+// Enterprise HR & RBAC modules
+import { EmployeesModule } from './employees';
+import { GroupsModule } from './groups';
+import { TeamsModule } from './teams';
+import { RolesModule } from './roles';
+import { RulesModule } from './rules';
+import { AuditModule } from './audit';
+import { DashboardConfigModule } from './dashboard-config';
 
 @Module({
   imports: [
@@ -29,6 +37,14 @@ import { SeoModule } from './seo';
     CareersModule,
     MediaModule,
     SeoModule,
+    // Enterprise HR & RBAC
+    EmployeesModule,
+    GroupsModule,
+    TeamsModule,
+    RolesModule,
+    RulesModule,
+    AuditModule,
+    DashboardConfigModule,
   ],
   controllers: [AppController],
   providers: [AppService],
