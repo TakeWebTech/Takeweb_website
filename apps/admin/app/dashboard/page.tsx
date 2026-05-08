@@ -321,14 +321,14 @@ export default function DashboardPage() {
                     if (layout.widgets && Array.isArray(layout.widgets) && layout.widgets.length > 0) {
                         setActiveWidgets(layout.widgets.map((w: any) => w.widgetId));
                     } else {
-                        setActiveWidgets(DEFAULT_LAYOUTS[userData?.role || "VIEWER"] ?? DEFAULT_LAYOUTS.VIEWER);
+                        setActiveWidgets(DEFAULT_LAYOUTS[userData?.role || "VIEWER"] ?? []);
                     }
                 } else {
-                    setActiveWidgets(DEFAULT_LAYOUTS[userData?.role || "VIEWER"] ?? DEFAULT_LAYOUTS.VIEWER);
+                    setActiveWidgets(DEFAULT_LAYOUTS[userData?.role || "VIEWER"] ?? []);
                 }
             } catch (err) {
                 console.error("Dashboard init error:", err);
-                setActiveWidgets(DEFAULT_LAYOUTS.ADMIN);
+                setActiveWidgets(DEFAULT_LAYOUTS.ADMIN ?? []);
             } finally {
                 setLoading(false);
             }
@@ -368,7 +368,7 @@ export default function DashboardPage() {
     };
 
     const resetDefaults = () => {
-        setActiveWidgets(DEFAULT_LAYOUTS[user?.role || "ADMIN"] ?? DEFAULT_LAYOUTS.ADMIN);
+        setActiveWidgets(DEFAULT_LAYOUTS[user?.role || "ADMIN"] ?? []);
     };
 
     if (loading) {
