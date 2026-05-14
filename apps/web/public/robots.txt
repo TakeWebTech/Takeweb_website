@@ -1,0 +1,11 @@
+# *
+User-agent: *
+Allow: /
+
+# Disallow admin pages
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemaps
+Sitemap: https://yourwebsite.com/sitemap.xml
