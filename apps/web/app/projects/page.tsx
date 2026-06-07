@@ -17,11 +17,10 @@ interface Project {
     title: string;
     client: string;
     industry: string;
-    shortDescription: string;
     description: string;
     challenge: string;
     solution: string;
-    results: string;
+    outcome: string;
     technologies: string[];
     coverImage: string;
     isFeatured: boolean;
@@ -107,7 +106,7 @@ export default async function ProjectsPage() {
                                             </h2>
                                             <p className="text-sm text-[var(--text-muted)] mb-3">{project.client}</p>
                                             <p className="text-[var(--text-tertiary)] mb-4 line-clamp-2">
-                                                {project.shortDescription || project.description}
+                                                {project.description}
                                             </p>
 
                                             {/* Technologies */}
@@ -130,10 +129,10 @@ export default async function ProjectsPage() {
                                             )}
 
                                             {/* Results */}
-                                            {project.results && (
+                                            {project.outcome && (
                                                 <div className="flex items-center justify-between pt-4 border-t border-[var(--border-primary)]">
                                                     <span className="text-sm text-[var(--text-muted)]">Key Outcome</span>
-                                                    <span className="font-semibold text-primary-500">{project.results}</span>
+                                                    <span className="font-semibold text-primary-500">{project.outcome}</span>
                                                 </div>
                                             )}
                                         </div>

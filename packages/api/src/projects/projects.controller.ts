@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto, UpdateProjectDto } from './dto';
-import { JwtAuthGuard } from '../auth';
+import { JwtAuthGuard, Permissions, RbacGuard } from '../auth';
 
 @Controller('projects')
 export class ProjectsController {
@@ -34,25 +34,29 @@ export class ProjectsController {
 
     // Admin routes
     @Get('admin/all')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('project.read')
     getAllProjects() {
         return this.projectsService.getAllProjects();
     }
 
     @Post('admin')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('project.write')
     createProject(@Body() dto: CreateProjectDto) {
         return this.projectsService.createProject(dto);
     }
 
     @Put('admin/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('project.write')
     updateProject(@Param('id') id: string, @Body() dto: UpdateProjectDto) {
         return this.projectsService.updateProject(id, dto);
     }
 
     @Delete('admin/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('project.delete')
     deleteProject(@Param('id') id: string) {
         return this.projectsService.deleteProject(id);
     }

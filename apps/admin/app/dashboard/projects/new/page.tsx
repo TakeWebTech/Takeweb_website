@@ -22,11 +22,10 @@ export default function NewProjectPage() {
         slug: "",
         client: "",
         industry: "",
-        shortDescription: "",
         description: "",
         challenge: "",
         solution: "",
-        results: "",
+        outcome: "",
         technologies: "",
         serviceId: "",
         coverImage: "",
@@ -61,7 +60,7 @@ export default function NewProjectPage() {
             await api.post("/api/v1/projects/admin", {
                 ...formData,
                 technologies: formData.technologies.split(",").map(t => t.trim()).filter(Boolean),
-                images: formData.images.split("\n").filter(i => i.trim()),
+                images: formData.images.split("\n").map(i => i.trim()).filter(Boolean),
             });
             showToast("Project created!", "success");
             router.push("/dashboard/projects");
@@ -98,7 +97,6 @@ export default function NewProjectPage() {
                                 <div><label className="block text-sm font-medium text-neutral-300 mb-1.5">Client</label><input type="text" name="client" value={formData.client} onChange={handleChange} className="w-full" /></div>
                                 <div><label className="block text-sm font-medium text-neutral-300 mb-1.5">Industry</label><input type="text" name="industry" value={formData.industry} onChange={handleChange} placeholder="FinTech, Healthcare..." className="w-full" /></div>
                             </div>
-                            <div><label className="block text-sm font-medium text-neutral-300 mb-1.5">Short Description</label><textarea name="shortDescription" value={formData.shortDescription} onChange={handleChange} rows={2} className="w-full" /></div>
                             <div><label className="block text-sm font-medium text-neutral-300 mb-1.5">Full Description</label><textarea name="description" value={formData.description} onChange={handleChange} rows={6} className="w-full" /></div>
                         </div>
                     </div>
@@ -108,7 +106,7 @@ export default function NewProjectPage() {
                         <div className="space-y-4">
                             <div><label className="block text-sm font-medium text-neutral-300 mb-1.5">Challenge</label><textarea name="challenge" value={formData.challenge} onChange={handleChange} rows={4} placeholder="What problem did the client face?" className="w-full" /></div>
                             <div><label className="block text-sm font-medium text-neutral-300 mb-1.5">Solution</label><textarea name="solution" value={formData.solution} onChange={handleChange} rows={4} placeholder="How did you solve it?" className="w-full" /></div>
-                            <div><label className="block text-sm font-medium text-neutral-300 mb-1.5">Results</label><textarea name="results" value={formData.results} onChange={handleChange} rows={4} placeholder="What outcomes were achieved?" className="w-full" /></div>
+                            <div><label className="block text-sm font-medium text-neutral-300 mb-1.5">Outcome</label><textarea name="outcome" value={formData.outcome} onChange={handleChange} rows={4} placeholder="What outcomes were achieved?" className="w-full" /></div>
                         </div>
                     </div>
                 </div>

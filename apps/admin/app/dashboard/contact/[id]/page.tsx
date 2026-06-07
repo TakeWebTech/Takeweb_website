@@ -9,11 +9,12 @@ import { useRouter } from "next/navigation";
 
 interface ContactMessage {
     id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     phone: string;
     company: string;
-    subject: string;
+    service: string;
     message: string;
     status: string;
     createdAt: string;
@@ -38,7 +39,7 @@ export default function ViewContactPage({ params }: { params: Promise<{ id: stri
 
     const updateStatus = async (status: string) => {
         try {
-            await api.put(`/api/v1/contact/admin/${resolvedParams.id}`, { status });
+            await api.patch(`/api/v1/contact/admin/${resolvedParams.id}`, { status });
             showToast("Status updated", "success");
             setMessage(prev => prev ? { ...prev, status } : null);
         } catch { showToast("Failed to update status", "error"); }
@@ -73,8 +74,8 @@ export default function ViewContactPage({ params }: { params: Promise<{ id: stri
                 <div className="flex items-center gap-4">
                     <Link href="/dashboard/contact" className="p-2 rounded-lg hover:bg-dark-700 text-neutral-400"><ArrowLeft size={20} /></Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-white">{message.subject || "No Subject"}</h1>
-                        <p className="text-neutral-400 mt-1">From {message.name}</p>
+                        <h1 className="text-2xl font-bold text-white">{message.service || "Contact Inquiry"}</h1>
+                        <p className="text-neutral-400 mt-1">From {message.firstName} {message.lastName}</p>
                     </div>
                 </div>
                 <div className="flex gap-3">
@@ -87,7 +88,7 @@ export default function ViewContactPage({ params }: { params: Promise<{ id: stri
                     <div className="card">
                         <div className="flex items-start justify-between mb-6">
                             <div>
-                                <h2 className="text-xl font-semibold text-white">{message.name}</h2>
+                                <h2 className="text-xl font-semibold text-white">{message.firstName} {message.lastName}</h2>
                                 <a href={`mailto:${message.email}`} className="text-primary-400 hover:underline">{message.email}</a>
                                 {message.phone && <p className="text-neutral-400 text-sm mt-1">{message.phone}</p>}
                                 {message.company && <p className="text-neutral-400 text-sm">{message.company}</p>}
@@ -98,7 +99,7 @@ export default function ViewContactPage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <div className="border-t border-neutral-700 pt-6">
-                            <h3 className="text-lg font-medium text-white mb-3">{message.subject || "Message"}</h3>
+                            <h3 className="text-lg font-medium text-white mb-3">{message.service || "Message"}</h3>
                             <div className="text-neutral-300 whitespace-pre-wrap leading-relaxed">
                                 {message.message}
                             </div>
@@ -113,7 +114,7 @@ export default function ViewContactPage({ params }: { params: Promise<{ id: stri
                     <div className="card mt-6">
                         <h3 className="text-lg font-semibold text-white mb-4">Quick Reply</h3>
                         <a
-                            href={`mailto:${message.email}?subject=Re: ${encodeURIComponent(message.subject || "Your inquiry")}`}
+                            href={`mailto:${message.email}?subject=Re: ${encodeURIComponent(message.service || "Your inquiry")}`}
                             className="btn-primary"
                         >
                             <Mail size={18} /> Reply via Email

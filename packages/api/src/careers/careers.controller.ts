@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { CareersService } from './careers.service';
 import { CreateCareerDto, UpdateCareerDto } from './dto';
-import { JwtAuthGuard } from '../auth';
+import { JwtAuthGuard, Permissions, RbacGuard } from '../auth';
 
 @Controller('careers')
 export class CareersController {
@@ -45,37 +45,43 @@ export class CareersController {
 
     // Admin routes
     @Get('admin/all')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('career.read')
     getAllJobs() {
         return this.careersService.getAllJobs();
     }
 
     @Get('admin/:id/applications')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('career.read')
     getJobApplications(@Param('id') id: string) {
         return this.careersService.getJobApplications(id);
     }
 
     @Post('admin')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('career.write')
     createJob(@Body() dto: CreateCareerDto) {
         return this.careersService.createJob(dto);
     }
 
     @Put('admin/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('career.write')
     updateJob(@Param('id') id: string, @Body() dto: UpdateCareerDto) {
         return this.careersService.updateJob(id, dto);
     }
 
     @Delete('admin/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('career.delete')
     deleteJob(@Param('id') id: string) {
         return this.careersService.deleteJob(id);
     }
 
     @Patch('admin/applications/:id/status')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('career.write')
     updateApplicationStatus(
         @Param('id') id: string,
         @Body('status') status: string,

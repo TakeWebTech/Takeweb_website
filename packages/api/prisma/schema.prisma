@@ -13,7 +13,10 @@ datasource db {
 // ============ User & Auth ============
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
+  MANAGER
+  EMPLOYEE
   EDITOR
   AUTHOR
   VIEWER
@@ -38,7 +41,24 @@ enum AccessType {
   CREATE
   EDIT
   DELETE
+  APPROVE
+  ASSIGN
+  EXPORT
+  READ_ONLY
+  FULL_ACCESS
   NONE
+}
+
+enum PermissionEffect {
+  ALLOW
+  DENY
+}
+
+enum RoleScopeType {
+  ORGANIZATION
+  GROUP
+  TEAM
+  USER
 }
 
 enum RuleLevel {
@@ -48,46 +68,81 @@ enum RuleLevel {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  passwordHash  String
-  firstName     String
-  lastName      String
-  role          Role      @default(AUTHOR)
-  avatar        String?
-  bio           String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role     @default(AUTHOR)
+  avatar       String?
+  bio          String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Employee Fields
-  employeeId      String?          @unique
+  employeeId      String?         @unique
   dateOfBirth     DateTime?
   joiningDate     DateTime?
-  workType        WorkType         @default(ONSITE)
-  department      String?
+  workType        WorkType        @default(ONSITE)
   location        String?
+  designation     String?
   phone           String?
-  lifecycleStatus LifecycleStatus  @default(ACTIVE)
+  lifecycleStatus LifecycleStatus @default(ACTIVE)
+  isDirector      Boolean         @default(false)
+  portalAccess    Boolean         @default(true)
+
+  // Attendance & Shift Settings
+  shiftStart              String  @default("09:00") // HH:mm
+  shiftEnd                String  @default("18:00") // HH:mm
+  shiftGraceBeforeMinutes Int     @default(15)
+  shiftGraceAfterMinutes  Int     @default(30)
+  lateGraceMinutes        Int     @default(15)
+  shiftTimezone           String?
 
   // Custom Role (overrides default Role enum when set)
-  customRoleId    String?
-  customRole      CustomRole?      @relation(fields: [customRoleId], references: [id])
+  customRoleId String?
+  customRole   CustomRole? @relation(fields: [customRoleId], references: [id])
 
   // Group & Team
-  groupId         String?
-  group           Group?           @relation(fields: [groupId], references: [id])
-  teamId          String?
-  team            Team?            @relation("TeamMembers", fields: [teamId], references: [id])
+  groupId String?
+  group   Group?  @relation(fields: [groupId], references: [id])
+  teamId  String?
+  team    Team?   @relation("TeamMembers", fields: [teamId], references: [id])
 
   // Relations
   blogPosts        BlogPost[]
   sessions         Session[]
-  managedTeams     Team[]           @relation("TeamManager")
-  ledTeams         Team[]           @relation("TeamLead")
+  managedTeams     Team[]            @relation("TeamManager")
+  ledTeams         Team[]            @relation("TeamLead")
   auditLogs        AuditLog[]
   dashboardLayouts DashboardLayout[]
-  individualRules  Rule[]           @relation("IndividualRules")
+  individualRules  Rule[]            @relation("IndividualRules")
+  roleAssignments  UserRole[]
+
+  // Employee Fields (Department)
+  departmentId      String?
+  department        Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id])
+  ledDepartment     Department? @relation("DepartmentHead")
+  managedDepartment Department? @relation("DepartmentManagers")
+
+  // Projects
+  assignedProjects Project[] @relation("ProjectMembers")
+  ledProjects      Project[] @relation("ProjectLeads")
+
+  // Reviews Architecture
+  assignedReviewsAsReviewer ReviewAssignment[] @relation("ReviewerAssignments")
+  assignedReviewsAsReviewee ReviewAssignment[] @relation("RevieweeAssignments")
+
+  // HR System Relations
+  createdNotifications Notification[]     @relation("CreatedNotifications")
+  notificationReads    NotificationRead[] @relation("UserNotifications")
+  reviewsGiven         Review[]           @relation("ReviewsGiven")
+  reviewsReceived      Review[]           @relation("ReviewsReceived")
+  attendanceRecords    Attendance[]       @relation("UserAttendance")
+  leaveRequests        LeaveRequest[]     @relation("UserLeaveRequests")
+  overtimeRequests     OvertimeRequest[]  @relation("UserOvertimeRequests")
+  overtimeReviewed     OvertimeRequest[]  @relation("OvertimeReviewedBy")
 
   @@map("users")
 }
@@ -124,42 +179,42 @@ model BlogPost {
   viewCount   Int        @default(0)
   authorId    String
   categoryId  String?
-  
+
   // Enhanced SEO Fields
-  metaTitle       String?
-  metaDescription String?
-  focusKeywords   String[]
-  ogImage         String?
-  ogTitle         String?
-  ogDescription   String?
-  twitterImage    String?
-  canonicalUrl    String?
-  noIndex         Boolean   @default(false)
-  noFollow        Boolean   @default(false)
-  schemaType      String?   @default("Article")
-  schemaData      Json?
-  seoScore        Int       @default(0)
+  metaTitle        String?
+  metaDescription  String?
+  focusKeywords    String[]
+  ogImage          String?
+  ogTitle          String?
+  ogDescription    String?
+  twitterImage     String?
+  canonicalUrl     String?
+  noIndex          Boolean  @default(false)
+  noFollow         Boolean  @default(false)
+  schemaType       String?  @default("Article")
+  schemaData       Json?
+  seoScore         Int      @default(0)
   readabilityScore Int      @default(0)
-  
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  author    User      @relation(fields: [authorId], references: [id])
-  category  Category? @relation(fields: [categoryId], references: [id])
-  tags      TagsOnPosts[]
+  author   User          @relation(fields: [authorId], references: [id])
+  category Category?     @relation(fields: [categoryId], references: [id])
+  tags     TagsOnPosts[]
 
   @@index([status, publishedAt])
   @@map("blog_posts")
 }
 
 model Category {
-  id          String     @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
-  slug        String     @unique
+  slug        String   @unique
   description String?
   parentId    String?
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime @default(now())
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children Category[] @relation("CategoryHierarchy")
@@ -193,16 +248,16 @@ model TagsOnPosts {
 // ============ Services ============
 
 model Service {
-  id              String   @id @default(cuid())
-  title           String
-  slug            String   @unique
+  id               String  @id @default(cuid())
+  title            String
+  slug             String  @unique
   shortDescription String
-  content         String   @db.Text
-  icon            String?
-  gradient        String?  // e.g., "from-blue-500 to-cyan-500"
-  sortOrder       Int      @default(0)
-  isActive        Boolean  @default(true)
-  
+  content          String  @db.Text
+  icon             String?
+  gradient         String? // e.g., "from-blue-500 to-cyan-500"
+  sortOrder        Int     @default(0)
+  isActive         Boolean @default(true)
+
   // Enhanced SEO Fields
   metaTitle       String?
   metaDescription String?
@@ -215,14 +270,14 @@ model Service {
   schemaType      String?  @default("Service")
   schemaData      Json?
   seoScore        Int      @default(0)
-  
-  benefits        String[] // Array of benefit strings
-  technologies    String[] // Array of technology names
-  useCases        String[] // Array of use case descriptions
-  faqs            Json?    // Array of { question, answer } for FAQ schema
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+
+  benefits     String[] // Array of benefit strings
+  technologies String[] // Array of technology names
+  useCases     String[] // Array of use case descriptions
+  faqs         Json? // Array of { question, answer } for FAQ schema
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   projects Project[]
 
@@ -246,7 +301,7 @@ model Project {
   isFeatured   Boolean  @default(false)
   isActive     Boolean  @default(true)
   serviceId    String?
-  
+
   // Enhanced SEO Fields
   metaTitle       String?
   metaDescription String?
@@ -259,12 +314,15 @@ model Project {
   schemaType      String?  @default("Article")
   schemaData      Json?
   seoScore        Int      @default(0)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   service Service?       @relation(fields: [serviceId], references: [id])
   images  ProjectImage[]
+
+  members User[] @relation("ProjectMembers")
+  leads   User[] @relation("ProjectLeads")
 
   @@map("projects")
 }
@@ -291,23 +349,23 @@ enum JobType {
 }
 
 model Career {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   title        String
-  slug         String   @unique
+  slug         String    @unique
   department   String
   location     String
-  type         JobType  @default(FULL_TIME)
-  isRemote     Boolean  @default(false)
-  description  String   @db.Text
-  requirements String?  @db.Text
+  type         JobType   @default(FULL_TIME)
+  isRemote     Boolean   @default(false)
+  description  String    @db.Text
+  requirements String?   @db.Text
   benefits     String[]
   minSalary    Int?
   maxSalary    Int?
   deadline     DateTime?
-  isActive     Boolean  @default(true)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   applications JobApplication[]
 
@@ -315,16 +373,16 @@ model Career {
 }
 
 model JobApplication {
-  id         String   @id @default(cuid())
-  careerId   String
-  firstName  String
-  lastName   String
-  email      String
-  phone      String?
-  resumeUrl  String?
-  coverLetter String? @db.Text
-  status     String   @default("NEW") // NEW, REVIEWING, INTERVIEWED, ACCEPTED, REJECTED
-  createdAt  DateTime @default(now())
+  id          String   @id @default(cuid())
+  careerId    String
+  firstName   String
+  lastName    String
+  email       String
+  phone       String?
+  resumeUrl   String?
+  coverLetter String?  @db.Text
+  status      String   @default("NEW") // NEW, REVIEWING, INTERVIEWED, ACCEPTED, REJECTED
+  createdAt   DateTime @default(now())
 
   career Career @relation(fields: [careerId], references: [id])
 
@@ -352,18 +410,18 @@ model Testimonial {
 // ============ Team ============
 
 model TeamMember {
-  id          String   @id @default(cuid())
-  name        String
-  position    String
-  department  String?
-  bio         String?  @db.Text
-  photo       String?
-  linkedin    String?
-  twitter     String?
-  email       String?
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  name       String
+  position   String
+  department String?
+  bio        String?  @db.Text
+  photo      String?
+  linkedin   String?
+  twitter    String?
+  email      String?
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
 
   @@map("team_members")
 }
@@ -423,13 +481,38 @@ model SiteSetting {
   @@map("site_settings")
 }
 
+model Page {
+  id        String     @id @default(cuid())
+  title     String
+  slug      String     @unique
+  path      String     @unique
+  excerpt   String?
+  content   String     @db.Text
+  status    PostStatus @default(DRAFT)
+  category  String?
+  sortOrder Int        @default(0)
+  isSystem  Boolean    @default(false)
+
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+  canonicalUrl    String?
+  noIndex         Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, category])
+  @@map("pages")
+}
+
 // ============ Newsletter ============
 
 model NewsletterSubscriber {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  isActive    Boolean  @default(true)
-  subscribedAt DateTime @default(now())
+  id             String    @id @default(cuid())
+  email          String    @unique
+  isActive       Boolean   @default(true)
+  subscribedAt   DateTime  @default(now())
   unsubscribedAt DateTime?
 
   @@map("newsletter_subscribers")
@@ -439,133 +522,133 @@ model NewsletterSubscriber {
 
 // Global SEO Settings
 model SeoSettings {
-  id                    String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // General Settings
-  siteTitle             String?
-  titleSeparator        String   @default("|")
-  metaDescription       String?
-  
+  siteTitle       String?
+  titleSeparator  String  @default("|")
+  metaDescription String?
+
   // Homepage SEO
-  homeTitle             String?
-  homeDescription       String?
-  homeKeywords          String[]
-  
+  homeTitle       String?
+  homeDescription String?
+  homeKeywords    String[]
+
   // Social Profiles
-  facebookUrl           String?
-  twitterUsername       String?
-  linkedinUrl           String?
-  instagramUrl          String?
-  youtubeUrl            String?
-  pinterestUrl          String?
-  
+  facebookUrl     String?
+  twitterUsername String?
+  linkedinUrl     String?
+  instagramUrl    String?
+  youtubeUrl      String?
+  pinterestUrl    String?
+
   // Webmaster Verification
   googleVerification    String?
   bingVerification      String?
   yandexVerification    String?
   pinterestVerification String?
   baiduVerification     String?
-  
+
   // Analytics & Search Console
-  googleAnalyticsId     String?
-  googleTagManagerId    String?
-  googleSearchConsole   String?
-  
+  googleAnalyticsId   String?
+  googleTagManagerId  String?
+  googleSearchConsole String?
+
   // Schema.org Organization
-  orgName               String?
-  orgLogo               String?
-  orgUrl                String?
-  orgType               String?  @default("Organization")
-  
+  orgName String?
+  orgLogo String?
+  orgUrl  String?
+  orgType String? @default("Organization")
+
   // Local SEO
-  localBusinessType     String?
-  streetAddress         String?
-  addressLocality       String?
-  addressRegion         String?
-  postalCode            String?
-  addressCountry        String?
-  phone                 String?
-  priceRange            String?
-  geo                   Json?    // { latitude, longitude }
-  openingHours          Json?    // Array of hours
-  
+  localBusinessType String?
+  streetAddress     String?
+  addressLocality   String?
+  addressRegion     String?
+  postalCode        String?
+  addressCountry    String?
+  phone             String?
+  priceRange        String?
+  geo               Json? // { latitude, longitude }
+  openingHours      Json? // Array of hours
+
   // Robots Settings
-  robotsIndex           Boolean  @default(true)
-  robotsFollow          Boolean  @default(true)
-  robotsArchive         Boolean  @default(true)
-  robotsSnippet         Boolean  @default(true)
-  robotsImageIndex      Boolean  @default(true)
-  
+  robotsIndex      Boolean @default(true)
+  robotsFollow     Boolean @default(true)
+  robotsArchive    Boolean @default(true)
+  robotsSnippet    Boolean @default(true)
+  robotsImageIndex Boolean @default(true)
+
   // Advanced
-  breadcrumbsEnabled    Boolean  @default(true)
-  breadcrumbsSeparator  String   @default("»")
-  noIndexEmptyArchives  Boolean  @default(true)
-  removeStopwords       Boolean  @default(false)
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  breadcrumbsEnabled   Boolean @default(true)
+  breadcrumbsSeparator String  @default("»")
+  noIndexEmptyArchives Boolean @default(true)
+  removeStopwords      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("seo_settings")
 }
 
 // SEO Metadata per Page/Entity
 model SeoMeta {
-  id                String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Reference to content (polymorphic)
-  entityType        String    // "page", "post", "service", "project", "career"
-  entityId          String
-  entitySlug        String
-  
+  entityType String // "page", "post", "service", "project", "career"
+  entityId   String
+  entitySlug String
+
   // Focus Keywords (multiple like Rank Math PRO)
-  focusKeywords     String[]
-  pillarContent     Boolean   @default(false)
-  cornerstone       Boolean   @default(false)
-  
+  focusKeywords String[]
+  pillarContent Boolean  @default(false)
+  cornerstone   Boolean  @default(false)
+
   // Basic SEO
-  title             String?
-  description       String?
-  canonicalUrl      String?
-  
+  title        String?
+  description  String?
+  canonicalUrl String?
+
   // Advanced Meta
-  metaRobots        Json?     // { index, follow, noarchive, nosnippet, etc. }
-  
+  metaRobots Json? // { index, follow, noarchive, nosnippet, etc. }
+
   // Open Graph
-  ogTitle           String?
-  ogDescription     String?
-  ogImage           String?
-  ogImageWidth      Int?
-  ogImageHeight     Int?
-  ogType            String?   @default("article")
-  ogVideo           String?
-  
+  ogTitle       String?
+  ogDescription String?
+  ogImage       String?
+  ogImageWidth  Int?
+  ogImageHeight Int?
+  ogType        String? @default("article")
+  ogVideo       String?
+
   // Twitter Card
-  twitterTitle      String?
+  twitterTitle       String?
   twitterDescription String?
-  twitterImage      String?
-  twitterCardType   String?   @default("summary_large_image")
-  
+  twitterImage       String?
+  twitterCardType    String? @default("summary_large_image")
+
   // Schema Markup (JSON-LD)
-  schemaType        String?   // "Article", "Product", "LocalBusiness", etc.
-  schemaData        Json?     // Full schema JSON
-  
+  schemaType String? // "Article", "Product", "LocalBusiness", etc.
+  schemaData Json? // Full schema JSON
+
   // SEO Score & Analysis
-  seoScore          Int?      @default(0)  // 0-100
-  readabilityScore  Int?      @default(0)  // 0-100
-  lastAnalyzedAt    DateTime?
-  analysisData      Json?     // Detailed analysis results
-  
+  seoScore         Int?      @default(0) // 0-100
+  readabilityScore Int?      @default(0) // 0-100
+  lastAnalyzedAt   DateTime?
+  analysisData     Json? // Detailed analysis results
+
   // Content Stats
-  wordCount         Int?      @default(0)
-  characterCount    Int?      @default(0)
-  sentenceCount     Int?      @default(0)
-  paragraphCount    Int?      @default(0)
-  headingCount      Json?     // { h1: 0, h2: 0, h3: 0, etc. }
-  imageCount        Int?      @default(0)
-  linkCount         Json?     // { internal: 0, external: 0, nofollow: 0 }
-  
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  wordCount      Int?  @default(0)
+  characterCount Int?  @default(0)
+  sentenceCount  Int?  @default(0)
+  paragraphCount Int?  @default(0)
+  headingCount   Json? // { h1: 0, h2: 0, h3: 0, etc. }
+  imageCount     Int?  @default(0)
+  linkCount      Json? // { internal: 0, external: 0, nofollow: 0 }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([entityType, entityId])
   @@index([entityType, entitySlug])
@@ -574,30 +657,30 @@ model SeoMeta {
 
 // Focus Keywords Tracking
 model KeywordTracking {
-  id              String    @id @default(cuid())
-  keyword         String
-  searchVolume    Int?
-  difficulty      Int?      // 0-100
-  cpc             Float?
-  trend           Json?     // Monthly trend data
-  
+  id           String @id @default(cuid())
+  keyword      String
+  searchVolume Int?
+  difficulty   Int? // 0-100
+  cpc          Float?
+  trend        Json? // Monthly trend data
+
   // Rankings
-  currentRank     Int?
-  previousRank    Int?
-  bestRank        Int?
-  rankHistory     Json?     // Array of { date, rank }
-  
+  currentRank  Int?
+  previousRank Int?
+  bestRank     Int?
+  rankHistory  Json? // Array of { date, rank }
+
   // Associated content
-  targetUrl       String?
-  entityType      String?
-  entityId        String?
-  
+  targetUrl  String?
+  entityType String?
+  entityId   String?
+
   // Tracking status
-  isTracking      Boolean   @default(true)
-  lastCheckedAt   DateTime?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  isTracking    Boolean   @default(true)
+  lastCheckedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([keyword, targetUrl])
   @@map("keyword_tracking")
@@ -605,33 +688,33 @@ model KeywordTracking {
 
 // URL Redirections Manager
 model Redirect {
-  id              String    @id @default(cuid())
-  
-  sourceUrl       String
-  targetUrl       String
-  type            Int       @default(301) // 301, 302, 307, 308, 410, 451
-  
+  id String @id @default(cuid())
+
+  sourceUrl String
+  targetUrl String
+  type      Int    @default(301) // 301, 302, 307, 308, 410, 451
+
   // Matching options
-  matchType       String    @default("exact") // "exact", "contains", "regex", "starts_with", "ends_with"
-  ignoreCase      Boolean   @default(true)
-  ignoreSlash     Boolean   @default(true)
-  
+  matchType   String  @default("exact") // "exact", "contains", "regex", "starts_with", "ends_with"
+  ignoreCase  Boolean @default(true)
+  ignoreSlash Boolean @default(true)
+
   // Query string handling
-  queryPassthrough Boolean   @default(true)
-  
+  queryPassthrough Boolean @default(true)
+
   // Stats
-  hitCount        Int       @default(0)
-  lastAccessedAt  DateTime?
-  
+  hitCount       Int       @default(0)
+  lastAccessedAt DateTime?
+
   // Status
-  isActive        Boolean   @default(true)
-  priority        Int       @default(0)
-  
+  isActive Boolean @default(true)
+  priority Int     @default(0)
+
   // Notes
-  note            String?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  note String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([sourceUrl])
   @@index([isActive, type])
@@ -640,24 +723,24 @@ model Redirect {
 
 // 404 Error Monitor
 model Error404Log {
-  id              String    @id @default(cuid())
-  
-  url             String
-  referrer        String?
-  userAgent       String?
-  ipAddress       String?
-  
+  id String @id @default(cuid())
+
+  url       String
+  referrer  String?
+  userAgent String?
+  ipAddress String?
+
   // Stats
-  hitCount        Int       @default(1)
-  firstSeenAt     DateTime  @default(now())
-  lastSeenAt      DateTime  @default(now())
-  
+  hitCount    Int      @default(1)
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
   // Resolution
-  isResolved      Boolean   @default(false)
-  resolvedAt      DateTime?
-  redirectToId    String?   // Link to Redirect if created
-  
-  createdAt       DateTime  @default(now())
+  isResolved   Boolean   @default(false)
+  resolvedAt   DateTime?
+  redirectToId String? // Link to Redirect if created
+
+  createdAt DateTime @default(now())
 
   @@unique([url])
   @@index([hitCount])
@@ -667,33 +750,33 @@ model Error404Log {
 
 // Sitemap Configuration
 model SitemapEntry {
-  id              String    @id @default(cuid())
-  
-  url             String    @unique
-  entityType      String?   // "page", "post", "service", etc.
-  entityId        String?
-  
+  id String @id @default(cuid())
+
+  url        String  @unique
+  entityType String? // "page", "post", "service", etc.
+  entityId   String?
+
   // Sitemap settings
   includeInSitemap Boolean   @default(true)
-  priority        Float     @default(0.5)
-  changeFrequency String    @default("weekly") // "always", "hourly", "daily", "weekly", "monthly", "yearly", "never"
-  lastModified    DateTime?
-  
+  priority         Float     @default(0.5)
+  changeFrequency  String    @default("weekly") // "always", "hourly", "daily", "weekly", "monthly", "yearly", "never"
+  lastModified     DateTime?
+
   // Sitemap type
-  sitemapType     String    @default("default") // "default", "news", "image", "video"
-  
+  sitemapType String @default("default") // "default", "news", "image", "video"
+
   // For news sitemap
-  newsTitle       String?
+  newsTitle           String?
   newsPublicationDate DateTime?
-  
+
   // For image sitemap
-  images          Json?     // Array of { url, title, caption }
-  
+  images Json? // Array of { url, title, caption }
+
   // For video sitemap
-  videos          Json?     // Array of { url, title, description, thumbnail, duration }
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  videos Json? // Array of { url, title, description, thumbnail, duration }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([sitemapType, includeInSitemap])
   @@map("sitemap_entries")
@@ -701,50 +784,50 @@ model SitemapEntry {
 
 // Schema Templates (Pre-built schemas)
 model SchemaTemplate {
-  id              String    @id @default(cuid())
-  
-  name            String
-  schemaType      String    // "Article", "Product", "FAQPage", "HowTo", etc.
-  description     String?
-  template        Json      // Schema template with placeholders
-  
+  id String @id @default(cuid())
+
+  name        String
+  schemaType  String // "Article", "Product", "FAQPage", "HowTo", etc.
+  description String?
+  template    Json // Schema template with placeholders
+
   // Assignment
-  entityTypes     String[]  // Which entity types can use this
-  isDefault       Boolean   @default(false)
-  
-  isActive        Boolean   @default(true)
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  entityTypes String[] // Which entity types can use this
+  isDefault   Boolean  @default(false)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("schema_templates")
 }
 
 // Internal Link Suggestions
 model LinkSuggestion {
-  id              String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Source content
-  sourceType      String
-  sourceId        String
-  sourceUrl       String
-  
+  sourceType String
+  sourceId   String
+  sourceUrl  String
+
   // Suggested target
-  targetType      String
-  targetId        String
-  targetUrl       String
-  
+  targetType String
+  targetId   String
+  targetUrl  String
+
   // Suggestion details
   anchorText      String?
-  relevanceScore  Float     @default(0) // 0-1
+  relevanceScore  Float    @default(0) // 0-1
   matchedKeywords String[]
-  
+
   // Status
-  isApplied       Boolean   @default(false)
-  isDismissed     Boolean   @default(false)
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  isApplied   Boolean @default(false)
+  isDismissed Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([sourceType, sourceId, targetType, targetId])
   @@index([sourceType, sourceId])
@@ -753,89 +836,89 @@ model LinkSuggestion {
 
 // SEO Audit Reports
 model SeoAudit {
-  id              String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Overall scores
-  overallScore    Int       @default(0)
-  technicalScore  Int       @default(0)
-  contentScore    Int       @default(0)
-  socialScore     Int       @default(0)
-  
+  overallScore   Int @default(0)
+  technicalScore Int @default(0)
+  contentScore   Int @default(0)
+  socialScore    Int @default(0)
+
   // Issue counts
-  criticalIssues  Int       @default(0)
-  warnings        Int       @default(0)
-  suggestions     Int       @default(0)
-  passed          Int       @default(0)
-  
+  criticalIssues Int @default(0)
+  warnings       Int @default(0)
+  suggestions    Int @default(0)
+  passed         Int @default(0)
+
   // Detailed results
-  results         Json      // Full audit results
-  
+  results Json // Full audit results
+
   // Crawl stats
-  pagesCrawled    Int       @default(0)
-  imagesAnalyzed  Int       @default(0)
-  linksAnalyzed   Int       @default(0)
-  
+  pagesCrawled   Int @default(0)
+  imagesAnalyzed Int @default(0)
+  linksAnalyzed  Int @default(0)
+
   // Status
-  status          String    @default("pending") // "pending", "running", "completed", "failed"
-  startedAt       DateTime?
-  completedAt     DateTime?
-  errorMessage    String?
-  
-  createdAt       DateTime  @default(now())
+  status       String    @default("pending") // "pending", "running", "completed", "failed"
+  startedAt    DateTime?
+  completedAt  DateTime?
+  errorMessage String?
+
+  createdAt DateTime @default(now())
 
   @@map("seo_audits")
 }
 
 // Content Analysis Rules (customizable)
 model SeoRule {
-  id              String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Rule identification
-  ruleKey         String    @unique
-  name            String
-  description     String?
-  category        String    // "basic", "readability", "social", "technical", "advanced"
-  
+  ruleKey     String  @unique
+  name        String
+  description String?
+  category    String // "basic", "readability", "social", "technical", "advanced"
+
   // Rule configuration
-  isActive        Boolean   @default(true)
-  weight          Int       @default(1) // Score weight
-  severity        String    @default("warning") // "error", "warning", "info"
-  
+  isActive Boolean @default(true)
+  weight   Int     @default(1) // Score weight
+  severity String  @default("warning") // "error", "warning", "info"
+
   // Thresholds
-  minValue        Float?
-  maxValue        Float?
-  targetValue     Float?
-  
+  minValue    Float?
+  maxValue    Float?
+  targetValue Float?
+
   // Messages
-  passMessage     String?
-  failMessage     String?
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  passMessage String?
+  failMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("seo_rules")
 }
 
 // Content AI Suggestions Log
 model ContentSuggestion {
-  id              String    @id @default(cuid())
-  
-  entityType      String
-  entityId        String
-  
-  suggestionType  String    // "title", "description", "content", "keywords", "internal_links"
-  originalContent String?   @db.Text
-  suggestedContent String   @db.Text
-  
+  id String @id @default(cuid())
+
+  entityType String
+  entityId   String
+
+  suggestionType   String // "title", "description", "content", "keywords", "internal_links"
+  originalContent  String? @db.Text
+  suggestedContent String  @db.Text
+
   // AI Details
-  model           String?
-  prompt          String?   @db.Text
-  
+  model  String?
+  prompt String? @db.Text
+
   // Status
-  isApplied       Boolean   @default(false)
-  isDismissed     Boolean   @default(false)
-  
-  createdAt       DateTime  @default(now())
+  isApplied   Boolean @default(false)
+  isDismissed Boolean @default(false)
+
+  createdAt DateTime @default(now())
 
   @@index([entityType, entityId])
   @@map("content_suggestions")
@@ -843,29 +926,29 @@ model ContentSuggestion {
 
 // Analytics Snapshots (for dashboard)
 model AnalyticsSnapshot {
-  id              String    @id @default(cuid())
-  
-  date            DateTime  @db.Date
-  
+  id String @id @default(cuid())
+
+  date DateTime @db.Date
+
   // Traffic metrics
-  pageViews       Int       @default(0)
-  uniqueVisitors  Int       @default(0)
-  avgSessionDuration Float? 
-  bounceRate      Float?
-  
+  pageViews          Int    @default(0)
+  uniqueVisitors     Int    @default(0)
+  avgSessionDuration Float?
+  bounceRate         Float?
+
   // Search metrics
-  impressions     Int       @default(0)
-  clicks          Int       @default(0)
-  ctr             Float?    // Click-through rate
-  avgPosition     Float?
-  
+  impressions Int    @default(0)
+  clicks      Int    @default(0)
+  ctr         Float? // Click-through rate
+  avgPosition Float?
+
   // Top data
-  topPages        Json?     // Array of { url, views }
-  topKeywords     Json?     // Array of { keyword, impressions, clicks, position }
-  topReferrers    Json?     // Array of { source, visits }
-  topCountries    Json?     // Array of { country, visits }
-  
-  createdAt       DateTime  @default(now())
+  topPages     Json? // Array of { url, views }
+  topKeywords  Json? // Array of { keyword, impressions, clicks, position }
+  topReferrers Json? // Array of { source, visits }
+  topCountries Json? // Array of { country, visits }
+
+  createdAt DateTime @default(now())
 
   @@unique([date])
   @@index([date])
@@ -885,37 +968,37 @@ model Group {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  teams       Team[]
-  members     User[]
-  rules       Rule[]   @relation("GroupRules")
+  teams   Team[]
+  members User[]
+  rules   Rule[] @relation("GroupRules")
 
   @@map("groups")
 }
 
 // Teams (within Groups)
 model Team {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
-  slug        String   @unique
+  slug        String  @unique
   description String?
-  isActive    Boolean  @default(true)
+  isActive    Boolean @default(true)
 
   // Group parent
-  groupId     String
-  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   // Leadership
-  managerId   String?
-  manager     User?    @relation("TeamManager", fields: [managerId], references: [id])
-  leadId      String?
-  lead        User?    @relation("TeamLead", fields: [leadId], references: [id])
+  managerId String?
+  manager   User?   @relation("TeamManager", fields: [managerId], references: [id])
+  leadId    String?
+  lead      User?   @relation("TeamLead", fields: [leadId], references: [id])
 
   // Relations
-  members     User[]   @relation("TeamMembers")
-  rules       Rule[]   @relation("TeamRules")
+  members User[] @relation("TeamMembers")
+  rules   Rule[] @relation("TeamRules")
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([groupId, name])
   @@map("teams")
@@ -924,7 +1007,8 @@ model Team {
 // Permission Definition (Module × AccessType)
 model Permission {
   id          String     @id @default(cuid())
-  module      String     // "dashboard", "employees", "projects", "reviews", "reports", "settings", etc.
+  key         String     @unique // IAM-style key: "employee.view"
+  module      String // "dashboard", "employees", "projects", "reviews", "reports", "settings", etc.
   accessType  AccessType
   description String?
 
@@ -949,6 +1033,7 @@ model CustomRole {
   // Relations
   permissions RolePermission[]
   users       User[]
+  userRoles   UserRole[]
 
   @@map("custom_roles")
 }
@@ -957,6 +1042,7 @@ model CustomRole {
 model RolePermission {
   roleId       String
   permissionId String
+  effect       PermissionEffect @default(ALLOW)
 
   role       CustomRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
@@ -965,33 +1051,55 @@ model RolePermission {
   @@map("role_permissions")
 }
 
+// Role assignments with scope
+model UserRole {
+  id          String        @id @default(cuid())
+  userId      String?
+  roleId      String
+  scopeType   RoleScopeType @default(ORGANIZATION)
+  scopeId     String?
+  isTemporary Boolean       @default(false)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  createdAt   DateTime      @default(now())
+
+  user User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role CustomRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, scopeType, scopeId, userId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([scopeType, scopeId])
+  @@map("user_roles")
+}
+
 // Rule-Based Access Engine
 model Rule {
-  id          String    @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
-  isActive    Boolean   @default(true)
-  priority    Int       @default(0)
+  isActive    Boolean @default(true)
+  priority    Int     @default(0)
 
   // Scope
-  level       RuleLevel
-  groupId     String?
-  group       Group?    @relation("GroupRules", fields: [groupId], references: [id], onDelete: Cascade)
-  teamId      String?
-  team        Team?     @relation("TeamRules", fields: [teamId], references: [id], onDelete: Cascade)
-  userId      String?
-  user        User?     @relation("IndividualRules", fields: [userId], references: [id], onDelete: Cascade)
+  level   RuleLevel
+  groupId String?
+  group   Group?    @relation("GroupRules", fields: [groupId], references: [id], onDelete: Cascade)
+  teamId  String?
+  team    Team?     @relation("TeamRules", fields: [teamId], references: [id], onDelete: Cascade)
+  userId  String?
+  user    User?     @relation("IndividualRules", fields: [userId], references: [id], onDelete: Cascade)
 
   // Rule definition
-  module      String    // target module
-  accessType  AccessType // what access to grant/deny
-  effect      String    @default("DENY") // "ALLOW" or "DENY"
+  module     String // target module
+  accessType AccessType // what access to grant/deny
+  effect     String     @default("DENY") // "ALLOW" or "DENY"
 
   // Conditions (JSON for flexibility)
-  conditions  Json?     // e.g. { "workHoursOnly": true, "roleEquals": "INTERN" }
+  conditions Json? // e.g. { "workHoursOnly": true, "roleEquals": "INTERN" }
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([level, isActive])
   @@map("rules")
@@ -999,26 +1107,26 @@ model Rule {
 
 // Audit Logs
 model AuditLog {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Who
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  userEmail   String
-  userRole    String
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+  userEmail String
+  userRole  String
 
   // What
-  action      String   // "CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "PERMISSION_CHANGE", etc.
-  module      String   // "employees", "auth", "roles", "rules", etc.
-  entityType  String?  // "User", "Group", "Team", etc.
-  entityId    String?
+  action     String // "CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "PERMISSION_CHANGE", etc.
+  module     String // "employees", "auth", "roles", "rules", etc.
+  entityType String? // "User", "Group", "Team", etc.
+  entityId   String?
 
   // Details
   description String?
-  changes     Json?    // { before: {...}, after: {...} }
-  metadata    Json?    // { ip, userAgent, deviceInfo }
+  changes     Json? // { before: {...}, after: {...} }
+  metadata    Json? // { ip, userAgent, deviceInfo }
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([module, action])
@@ -1028,20 +1136,235 @@ model AuditLog {
 
 // Dashboard Layouts (per-user widget configuration)
 model DashboardLayout {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  name        String   @default("Default")
-  isDefault   Boolean  @default(true)
+  name      String  @default("Default")
+  isDefault Boolean @default(true)
 
   // Widget configuration
-  widgets     Json     // Array of { widgetId, x, y, w, h, locked, config }
+  widgets Json // Array of { widgetId, x, y, w, h, locked, config }
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, name])
   @@map("dashboard_layouts")
+}
+
+// ============ HR Management Additions ============
+
+enum NotificationType {
+  ORGANIZATION
+  DEPARTMENT
+  TEAM
+  GENERAL
+}
+
+model Notification {
+  id      String           @id @default(cuid())
+  title   String
+  message String           @db.Text
+  type    NotificationType
+
+  // Who created it
+  createdById String
+  createdBy   User   @relation("CreatedNotifications", fields: [createdById], references: [id])
+
+  // Targets (if null, applies to all within scope)
+  departmentId String?
+  teamId       String?
+
+  // Which users have read this
+  reads NotificationRead[]
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model NotificationRead {
+  id             String   @id @default(cuid())
+  userId         String
+  notificationId String
+  readAt         DateTime @default(now())
+
+  user         User         @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationId])
+  @@map("notification_reads")
+}
+
+model Review {
+  id          String  @id @default(cuid())
+  reviewerId  String? // Real identity, hidden from normal users
+  reviewer    User?   @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  anonymousId String // e.g. "Reviewer #A102"
+
+  targetUserId String
+  targetUser   User   @relation("ReviewsReceived", fields: [targetUserId], references: [id])
+
+  rating  Float?
+  comment String? @db.Text
+
+  status     String  @default("SUBMITTED") // SUBMITTED, SKIPPED, NA
+  categoryId String? // e.g., TEAM_MEMBER, PROJECT_LEAD
+
+  reviewCycleId String?
+  reviewCycle   ReviewCycle? @relation(fields: [reviewCycleId], references: [id])
+
+  week  Int
+  month Int
+  year  Int
+
+  createdAt DateTime @default(now())
+
+  @@map("reviews")
+}
+
+model Attendance {
+  id         String @id @default(cuid())
+  employeeId String
+  employee   User   @relation("UserAttendance", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  checkinTime  DateTime
+  checkoutTime DateTime?
+  workingHours Float? // Calculated on checkout in hours
+
+  latitude        Float?
+  longitude       Float?
+  punchInAccuracy Float?
+
+  status        String  @default("ACTIVE") // "ACTIVE", "COMPLETED"
+  earlyCheckout Boolean @default(false)
+  isLate        Boolean @default(false)
+  lateByMinutes Int?
+
+  createdAt DateTime @default(now())
+
+  @@map("attendance")
+}
+
+model LeaveRequest {
+  id         String @id @default(cuid())
+  employeeId String
+  employee   User   @relation("UserLeaveRequests", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  startDate DateTime
+  endDate   DateTime
+  reason    String   @db.Text
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("leave_requests")
+}
+
+model OvertimeRequest {
+  id         String @id @default(cuid())
+  employeeId String
+  employee   User   @relation("UserOvertimeRequests", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  date          DateTime
+  hours         Float
+  reason        String   @db.Text
+  attachmentUrl String?
+
+  status       String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedById String?
+  reviewedBy   User?     @relation("OvertimeReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("overtime_requests")
+}
+
+// ============ Department Architecture ============
+
+model Department {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+
+  headId String? @unique
+  head   User?   @relation("DepartmentHead", fields: [headId], references: [id])
+
+  managerId String? @unique
+  managers  User?   @relation("DepartmentManagers", fields: [managerId], references: [id])
+  employees User[]  @relation("DepartmentEmployees")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("departments")
+}
+
+// ============ Review Architecture ============
+
+model ReviewCycle {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+
+  reviews     Review[]
+  assignments ReviewAssignment[]
+
+  @@map("review_cycles")
+}
+
+model ReviewAssignment {
+  id String @id @default(cuid())
+
+  reviewerId String
+  reviewer   User   @relation("ReviewerAssignments", fields: [reviewerId], references: [id])
+
+  revieweeId String
+  reviewee   User   @relation("RevieweeAssignments", fields: [revieweeId], references: [id])
+
+  category String
+  status   String @default("PENDING") // PENDING, COMPLETED, SKIPPED
+
+  reviewCycleId String
+  reviewCycle   ReviewCycle @relation(fields: [reviewCycleId], references: [id], onDelete: Cascade)
+
+  dueDate DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([reviewerId, revieweeId, reviewCycleId])
+  @@map("review_assignments")
+}
+
+model ReviewSettings {
+  id                 String   @id @default("default")
+  isAnonymousEnabled Boolean  @default(true)
+  deadlines          Json? // e.g. { "Q1": "2026-03-31T23:59:59.000Z" }
+  managementUserIds  String[] // Array of user IDs considered "Management"
+  hrUserIds          String[] // Array of user IDs considered "HR"
+
+  updatedAt DateTime @updatedAt
+
+  @@map("review_settings")
+}
+
+model CompanyFeedback {
+  id          String  @id @default(cuid())
+  category    String // "Work Culture", "Productivity", etc.
+  priority    String  @default("Low") // "Low", "Medium", "High", "Critical"
+  content     String  @db.Text
+  isAnonymous Boolean @default(true)
+
+  submitterId String?
+
+  createdAt DateTime @default(now())
+
+  @@map("company_feedback")
 }

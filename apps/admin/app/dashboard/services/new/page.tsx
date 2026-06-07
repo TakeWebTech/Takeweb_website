@@ -15,9 +15,9 @@ export default function NewServicePage() {
         title: "",
         slug: "",
         shortDescription: "",
-        description: "",
+        content: "",
         icon: "",
-        features: "",
+        benefits: "",
         sortOrder: 0,
         isActive: true,
     });
@@ -44,7 +44,9 @@ export default function NewServicePage() {
         try {
             const payload = {
                 ...formData,
-                features: formData.features.split("\n").filter(f => f.trim()),
+                benefits: formData.benefits.split("\n").map(f => f.trim()).filter(Boolean),
+                technologies: [],
+                useCases: [],
             };
             await api.post("/api/v1/services/admin", payload);
             showToast("Service created successfully!", "success");
@@ -93,11 +95,11 @@ export default function NewServicePage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-neutral-300 mb-1.5">Full Description</label>
-                                <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Detailed service description..." rows={8} className="w-full resize-y" />
+                                <textarea name="content" value={formData.content} onChange={handleChange} placeholder="Detailed service description..." rows={8} className="w-full resize-y" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-neutral-300 mb-1.5">Features (one per line)</label>
-                                <textarea name="features" value={formData.features} onChange={handleChange} placeholder="Custom design&#10;Responsive layout&#10;SEO optimization" rows={6} className="w-full resize-y font-mono text-sm" />
+                                <textarea name="benefits" value={formData.benefits} onChange={handleChange} placeholder="Custom design&#10;Responsive layout&#10;SEO optimization" rows={6} className="w-full resize-y font-mono text-sm" />
                             </div>
                         </div>
                     </div>

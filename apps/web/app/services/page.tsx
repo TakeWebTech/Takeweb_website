@@ -25,9 +25,9 @@ interface Service {
     title: string;
     slug: string;
     shortDescription: string;
-    description: string;
+    content: string;
     icon: string;
-    features: string[];
+    benefits: string[];
     sortOrder: number;
     isActive: boolean;
 }
@@ -135,12 +135,12 @@ export default async function ServicesPage() {
                                             </h3>
 
                                             <p className="text-[var(--text-tertiary)] mb-6">
-                                                {service.shortDescription || service.description}
-                                            </p>
+                                            {service.shortDescription || service.content}
+                                        </p>
 
-                                            {service.features && service.features.length > 0 && (
+                                            {service.benefits && service.benefits.length > 0 && (
                                                 <ul className="space-y-2 mb-6">
-                                                    {service.features.slice(0, 4).map((feature, i) => (
+                                                    {service.benefits.slice(0, 4).map((feature, i) => (
                                                         <li key={i} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                                                             <Check size={14} className="text-primary-500 flex-shrink-0" />
                                                             {feature}

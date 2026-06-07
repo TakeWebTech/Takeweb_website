@@ -1,21 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
-    MessageSquare, Search, Trash2, Mail, Calendar, User,
-    Eye, CheckCircle2, Clock, X,
+    Calendar,
+    Eye,
+    Mail,
+    MessageSquare,
+    Search,
+    Trash2,
+    User,
+    X,
 } from "lucide-react";
 
 interface Contact {
     id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     phone?: string;
-    subject?: string;
+    company?: string;
+    service?: string;
     message: string;
     status?: string;
     createdAt: string;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function ContactPage() {
     const [contacts, setContacts] = useState<Contact[]>([]);
@@ -23,34 +33,44 @@ export default function ContactPage() {
     const [search, setSearch] = useState("");
     const [selected, setSelected] = useState<Contact | null>(null);
 
-    useEffect(() => { fetchContacts(); }, []);
+    useEffect(() => {
+        fetchContacts();
+    }, []);
+
+    const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem("accessToken")}` });
 
     const fetchContacts = async () => {
         try {
-            const token = localStorage.getItem("accessToken");
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/v1/contact/admin/all`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (res.ok) setContacts(await res.json());
-        } catch (e) { console.error(e); } finally { setLoading(false); }
+            const res = await fetch(`${API_URL}/api/v1/contact/admin`, { headers: authHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                setContacts(Array.isArray(data) ? data : data.submissions || []);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const deleteContact = async (id: string) => {
         if (!confirm("Delete this message?")) return;
         try {
-            const token = localStorage.getItem("accessToken");
-            await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/v1/contact/admin/${id}`,
-                { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
-            );
+            await fetch(`${API_URL}/api/v1/contact/admin/${id}`, {
+                method: "DELETE",
+                headers: authHeaders(),
+            });
             if (selected?.id === id) setSelected(null);
             fetchContacts();
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error(e);
+        }
     };
 
-    const filtered = contacts.filter((c) =>
-        `${c.name} ${c.email} ${c.subject || ""} ${c.message}`.toLowerCase().includes(search.toLowerCase())
+    const filtered = contacts.filter((contact) =>
+        `${contact.firstName} ${contact.lastName} ${contact.email} ${contact.service || ""} ${contact.message}`
+            .toLowerCase()
+            .includes(search.toLowerCase()),
     );
 
     if (loading) {
@@ -74,7 +94,13 @@ export default function ContactPage() {
 
             <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
-                <input type="text" placeholder="Search messages..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9 text-sm" />
+                <input
+                    type="text"
+                    placeholder="Search messages..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-9 text-sm"
+                />
             </div>
 
             {filtered.length === 0 ? (
@@ -89,7 +115,7 @@ export default function ContactPage() {
                         <thead>
                             <tr>
                                 <th>Sender</th>
-                                <th className="hidden md:table-cell">Subject</th>
+                                <th className="hidden md:table-cell">Service</th>
                                 <th className="hidden lg:table-cell">Message</th>
                                 <th className="hidden sm:table-cell">Date</th>
                                 <th className="text-right">Actions</th>
@@ -101,7 +127,7 @@ export default function ContactPage() {
                                     <td>
                                         <div>
                                             <span className="font-medium text-white flex items-center gap-1.5">
-                                                <User size={12} /> {contact.name}
+                                                <User size={12} /> {contact.firstName} {contact.lastName}
                                             </span>
                                             <p className="text-xs text-neutral-500 flex items-center gap-1 mt-0.5">
                                                 <Mail size={10} /> {contact.email}
@@ -109,10 +135,12 @@ export default function ContactPage() {
                                         </div>
                                     </td>
                                     <td className="hidden md:table-cell">
-                                        <span className="text-neutral-400 text-sm">{contact.subject || "—"}</span>
+                                        <span className="text-neutral-400 text-sm">{contact.service || "-"}</span>
                                     </td>
                                     <td className="hidden lg:table-cell">
-                                        <span className="text-neutral-500 text-sm line-clamp-1 max-w-[200px] block">{contact.message}</span>
+                                        <span className="text-neutral-500 text-sm line-clamp-1 max-w-[200px] block">
+                                            {contact.message}
+                                        </span>
                                     </td>
                                     <td className="hidden sm:table-cell">
                                         <span className="text-xs text-neutral-500 flex items-center gap-1">
@@ -121,8 +149,12 @@ export default function ContactPage() {
                                     </td>
                                     <td onClick={(e) => e.stopPropagation()}>
                                         <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => setSelected(contact)} className="btn-icon"><Eye size={14} /></button>
-                                            <button onClick={() => deleteContact(contact.id)} className="btn-icon hover:text-error-400"><Trash2 size={14} /></button>
+                                            <button onClick={() => setSelected(contact)} className="btn-icon">
+                                                <Eye size={14} />
+                                            </button>
+                                            <button onClick={() => deleteContact(contact.id)} className="btn-icon hover:text-error-400">
+                                                <Trash2 size={14} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -132,29 +164,33 @@ export default function ContactPage() {
                 </div>
             )}
 
-            {/* Detail Modal */}
             {selected && (
                 <div className="modal-backdrop" onClick={() => setSelected(null)}>
                     <div className="modal max-w-lg" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-semibold text-white">Message Details</h3>
-                            <button onClick={() => setSelected(null)} className="btn-icon"><X size={18} /></button>
+                            <button onClick={() => setSelected(null)} className="btn-icon">
+                                <X size={18} />
+                            </button>
                         </div>
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
-                                    {selected.name.charAt(0)}
+                                    {selected.firstName.charAt(0)}
                                 </div>
                                 <div>
-                                    <p className="font-medium text-white">{selected.name}</p>
+                                    <p className="font-medium text-white">
+                                        {selected.firstName} {selected.lastName}
+                                    </p>
                                     <p className="text-xs text-neutral-500">{selected.email}</p>
                                 </div>
                             </div>
-                            {selected.phone && <p className="text-sm text-neutral-400">📞 {selected.phone}</p>}
-                            {selected.subject && (
+                            {selected.phone && <p className="text-sm text-neutral-400">{selected.phone}</p>}
+                            {selected.company && <p className="text-sm text-neutral-400">{selected.company}</p>}
+                            {selected.service && (
                                 <div>
-                                    <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Subject</label>
-                                    <p className="text-neutral-200 mt-1">{selected.subject}</p>
+                                    <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Service</label>
+                                    <p className="text-neutral-200 mt-1">{selected.service}</p>
                                 </div>
                             )}
                             <div>
@@ -168,7 +204,7 @@ export default function ContactPage() {
                                 <a href={`mailto:${selected.email}`} className="btn-primary flex-1 justify-center">
                                     <Mail size={14} /> Reply via Email
                                 </a>
-                                <button onClick={() => { deleteContact(selected.id); setSelected(null); }} className="btn-danger">
+                                <button onClick={() => deleteContact(selected.id)} className="btn-danger">
                                     <Trash2 size={14} /> Delete
                                 </button>
                             </div>

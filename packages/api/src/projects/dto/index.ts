@@ -58,6 +58,11 @@ export class CreateProjectDto {
     @IsOptional()
     @IsString()
     metaDescription?: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    images?: string[];
 }
 
 export class UpdateProjectDto {
@@ -121,4 +126,9 @@ export class UpdateProjectDto {
     @IsOptional()
     @IsString()
     metaDescription?: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    images?: string[];
 }

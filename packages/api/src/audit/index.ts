@@ -1,5 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { AuditController } from './audit.controller';
+import { AuditMutationInterceptor } from './audit.interceptor';
 import { AuditService } from './audit.service';
 import { PrismaModule } from '../prisma';
 
@@ -7,9 +8,10 @@ import { PrismaModule } from '../prisma';
 @Module({
   imports: [PrismaModule],
   controllers: [AuditController],
-  providers: [AuditService],
-  exports: [AuditService],
+  providers: [AuditService, AuditMutationInterceptor],
+  exports: [AuditService, AuditMutationInterceptor],
 })
 export class AuditModule {}
 
 export { AuditService } from './audit.service';
+export { AuditMutationInterceptor } from './audit.interceptor';

@@ -1,13 +1,14 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { AuditService } from './audit.service';
+import { JwtAuthGuard, Permissions, RbacGuard } from '../auth';
 
 @Controller('audit')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard, RbacGuard)
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get()
+  @Permissions('audit.view')
   findAll(
     @Query('userId') userId?: string,
     @Query('module') module?: string,
@@ -25,8 +26,10 @@ export class AuditController {
   }
 
   @Get('stats')
+  @Permissions('audit.view')
   getStats() { return this.auditService.getStats(); }
 
   @Get(':id')
+  @Permissions('audit.view')
   findOne(@Param('id') id: string) { return this.auditService.findOne(id); }
 }

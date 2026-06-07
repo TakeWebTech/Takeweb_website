@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsDateString, IsInt, Min } from 'class-validator';
 
 export enum WorkType {
   ONSITE = 'ONSITE',
@@ -57,6 +57,43 @@ export class CreateEmployeeDto {
 
   @IsOptional()
   @IsString()
+  designation?: string;
+
+  @IsOptional()
+  isDirector?: boolean;
+
+  @IsOptional()
+  portalAccess?: boolean;
+
+  @IsOptional()
+  @IsString()
+  shiftStart?: string;
+
+  @IsOptional()
+  @IsString()
+  shiftEnd?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  shiftGraceBeforeMinutes?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  shiftGraceAfterMinutes?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  lateGraceMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  shiftTimezone?: string;
+
+  @IsOptional()
+  @IsString()
   role?: string;
 
   @IsOptional()
@@ -73,6 +110,10 @@ export class CreateEmployeeDto {
 }
 
 export class UpdateEmployeeDto {
+  @IsOptional()
+  @IsString()
+  password?: string;
+
   @IsOptional()
   @IsString()
   firstName?: string;
@@ -108,6 +149,43 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  designation?: string;
+
+  @IsOptional()
+  isDirector?: boolean;
+
+  @IsOptional()
+  portalAccess?: boolean;
+
+  @IsOptional()
+  @IsString()
+  shiftStart?: string;
+
+  @IsOptional()
+  @IsString()
+  shiftEnd?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  shiftGraceBeforeMinutes?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  shiftGraceAfterMinutes?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  lateGraceMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  shiftTimezone?: string;
 
   @IsOptional()
   @IsString()

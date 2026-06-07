@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto, UpdateServiceDto } from './dto';
-import { JwtAuthGuard } from '../auth';
+import { JwtAuthGuard, Permissions, RbacGuard } from '../auth';
 
 @Controller('services')
 export class ServicesController {
@@ -29,25 +29,29 @@ export class ServicesController {
 
     // Admin routes
     @Get('admin/all')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('service.read')
     getAllServices() {
         return this.servicesService.getAllServices();
     }
 
     @Post('admin')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('service.write')
     createService(@Body() dto: CreateServiceDto) {
         return this.servicesService.createService(dto);
     }
 
     @Put('admin/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('service.write')
     updateService(@Param('id') id: string, @Body() dto: UpdateServiceDto) {
         return this.servicesService.updateService(id, dto);
     }
 
     @Delete('admin/:id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('service.delete')
     deleteService(@Param('id') id: string) {
         return this.servicesService.deleteService(id);
     }

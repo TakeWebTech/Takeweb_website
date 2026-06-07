@@ -74,12 +74,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     let blogPosts: MetadataRoute.Sitemap = [];
     try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        const response = await fetch(`${apiUrl}/api/v1/blog`, {
+        const response = await fetch(`${apiUrl}/api/v1/blog/posts`, {
             next: { revalidate: 3600 }, // Cache for 1 hour
         });
 
         if (response.ok) {
-            const posts = await response.json();
+            const data = await response.json();
+            const posts = Array.isArray(data) ? data : data.posts || [];
             blogPosts = posts.map((post: any) => ({
                 url: `${baseUrl}/blog/${post.slug}`,
                 lastModified: new Date(post.updatedAt || post.createdAt),

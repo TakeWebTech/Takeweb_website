@@ -13,6 +13,27 @@ export enum PostStatus {
 export class BlogService {
     constructor(private prisma: PrismaService) { }
 
+    private slugify(value: string) {
+        return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+
+    private async buildTagConnections(tagIds?: string[], tags?: string[]) {
+        const ids = [...(tagIds || [])];
+
+        for (const tagName of tags || []) {
+            const name = tagName.trim();
+            if (!name) continue;
+            const tag = await this.prisma.tag.upsert({
+                where: { slug: this.slugify(name) },
+                update: { name },
+                create: { name, slug: this.slugify(name) },
+            });
+            ids.push(tag.id);
+        }
+
+        return Array.from(new Set(ids)).map((tagId) => ({ tagId }));
+    }
+
     // Public methods
     async getPublishedPosts(page = 1, limit = 10, categorySlug?: string, tagSlug?: string) {
         const skip = (page - 1) * limit;
@@ -108,15 +129,21 @@ export class BlogService {
     }
 
     async createPost(authorId: string, dto: CreatePostDto) {
+        const { tagIds, tags, categoryId, ...data } = dto;
+        const tagConnections = await this.buildTagConnections(tagIds, tags);
+
         return this.prisma.blogPost.create({
             data: {
-                ...dto,
+                ...data,
                 authorId,
+                categoryId: categoryId?.trim() ? categoryId : undefined,
                 status: dto.status || PostStatus.DRAFT,
+                tags: tagConnections.length ? { create: tagConnections } : undefined,
             },
             include: {
                 author: { select: { id: true, firstName: true, lastName: true } },
                 category: true,
+                tags: { include: { tag: true } },
             },
         });
     }
@@ -129,15 +156,28 @@ export class BlogService {
         }
 
         // Auto-set publishedAt when publishing
-        const data: any = { ...dto };
+        const { tagIds, tags, categoryId, ...rest } = dto;
+        const data: any = { ...rest };
+        if (categoryId !== undefined) data.categoryId = categoryId.trim() ? categoryId : null;
         if (dto.status === PostStatus.PUBLISHED && !post.publishedAt) {
             data.publishedAt = new Date();
         }
 
-        return this.prisma.blogPost.update({
-            where: { id },
-            data,
-            include: { author: { select: { id: true, firstName: true, lastName: true } }, category: true },
+        const tagConnections = tagIds || tags ? await this.buildTagConnections(tagIds, tags) : undefined;
+
+        return this.prisma.$transaction(async (tx) => {
+            if (tagConnections) {
+                await tx.tagsOnPosts.deleteMany({ where: { postId: id } });
+            }
+
+            return tx.blogPost.update({
+                where: { id },
+                data: {
+                    ...data,
+                    tags: tagConnections?.length ? { create: tagConnections } : undefined,
+                },
+                include: { author: { select: { id: true, firstName: true, lastName: true } }, category: true, tags: { include: { tag: true } } },
+            });
         });
     }
 

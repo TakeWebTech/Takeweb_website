@@ -15,7 +15,7 @@ export default function GroupsPage() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editGroup, setEditGroup] = useState<Group | null>(null);
-    const [form, setForm] = useState({ name: "", description: "" });
+    const [form, setForm] = useState({ name: "", groupId: "", description: "" });
     const [saving, setSaving] = useState(false);
 
     const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -31,16 +31,25 @@ export default function GroupsPage() {
         finally { setLoading(false); }
     };
 
+    const generateGroupId = () => {
+        const random = Math.random().toString(36).slice(2, 8).toUpperCase();
+        return `GRP-${random}`;
+    };
+
     const saveGroup = async () => {
         setSaving(true);
         try {
             const url = editGroup ? `${base}/api/v1/groups/${editGroup.id}` : `${base}/api/v1/groups`;
+            const payload = {
+                ...form,
+                groupId: form.groupId?.trim() || generateGroupId(),
+            };
             const res = await fetch(url, {
                 method: editGroup ? "PATCH" : "POST",
                 headers: getHeaders(),
-                body: JSON.stringify(form),
+                body: JSON.stringify(payload),
             });
-            if (res.ok) { setShowModal(false); setEditGroup(null); setForm({ name: "", description: "" }); fetchGroups(); }
+            if (res.ok) { setShowModal(false); setEditGroup(null); setForm({ name: "", groupId: "", description: "" }); fetchGroups(); }
         } catch (err) { console.error(err); }
         finally { setSaving(false); }
     };
@@ -53,8 +62,8 @@ export default function GroupsPage() {
         } catch (err) { console.error(err); }
     };
 
-    const openEdit = (g: Group) => { setEditGroup(g); setForm({ name: g.name, description: g.description || "" }); setShowModal(true); };
-    const openNew = () => { setEditGroup(null); setForm({ name: "", description: "" }); setShowModal(true); };
+    const openEdit = (g: Group) => { setEditGroup(g); setForm({ name: g.name, groupId: g.slug, description: g.description || "" }); setShowModal(true); };
+    const openNew = () => { setEditGroup(null); setForm({ name: "", groupId: "", description: "" }); setShowModal(true); };
 
     if (loading) return <div className="space-y-4"><div className="skeleton h-8 w-48" /><div className="skeleton h-64 rounded-xl" /></div>;
 
@@ -76,6 +85,7 @@ export default function GroupsPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-white">{g.name}</h3>
+                                    <p className="text-xs text-neutral-500 mt-0.5">Group ID: <span className="text-neutral-300 font-mono">{g.slug}</span></p>
                                     {g.description && <p className="text-xs text-neutral-500 mt-0.5">{g.description}</p>}
                                 </div>
                             </div>
@@ -116,17 +126,33 @@ export default function GroupsPage() {
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content max-w-md" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-lg font-semibold text-white">{editGroup ? "Edit Group" : "New Group"}</h2>
+                            <h2 className="text-lg font-semibold text-white">{editGroup ? "Edit Group" : "Create Group"}</h2>
                             <button onClick={() => setShowModal(false)} className="btn-icon"><X size={18} /></button>
                         </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm text-neutral-300 mb-1.5">Name <span className="text-red-400">*</span></label>
-                                <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full" placeholder="Engineering" />
+                        <div className="space-y-6">
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-neutral-300 mb-1.5">Group Name <span className="text-red-400">*</span></label>
+                                    <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full" placeholder="Engineering" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center justify-between">
+                                        <label className="block text-sm text-neutral-300 mb-1.5">Group ID</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setForm({ ...form, groupId: generateGroupId() })}
+                                            className="text-xs text-primary-400 hover:text-primary-300"
+                                        >
+                                            Auto-generate
+                                        </button>
+                                    </div>
+                                    <input type="text" value={form.groupId} onChange={e => setForm({ ...form, groupId: e.target.value })} className="w-full font-mono" placeholder="GRP-ENG" />
+                                    <p className="text-[11px] text-neutral-500 mt-1">Leave empty to auto-generate a unique Group ID.</p>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm text-neutral-300 mb-1.5">Description</label>
-                                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full" rows={3} placeholder="Optional description..." />
+                                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full" rows={3} placeholder="Describe the department responsibilities, scope, or ownership..." />
                             </div>
                         </div>
                         <div className="flex justify-end gap-2 mt-6">

@@ -5,6 +5,21 @@ import { PrismaService } from '../prisma/prisma.service';
 export class GroupsService {
   constructor(private prisma: PrismaService) {}
 
+  private slugify(value: string) {
+    return value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
+
+  private async generateUniqueSlug(prefix: string) {
+    let slug = prefix;
+    let exists = await this.prisma.group.findUnique({ where: { slug } });
+    while (exists) {
+      const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+      slug = `${prefix}-${suffix}`.toLowerCase();
+      exists = await this.prisma.group.findUnique({ where: { slug } });
+    }
+    return slug;
+  }
+
   async findAll() {
     return this.prisma.group.findMany({
       include: {
@@ -33,21 +48,30 @@ export class GroupsService {
     return group;
   }
 
-  async create(data: { name: string; description?: string }) {
-    const slug = data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  async create(data: { name: string; groupId?: string; description?: string }) {
+    const trimmedGroupId = data.groupId?.trim();
+    const baseSlug = trimmedGroupId ? this.slugify(trimmedGroupId) : 'grp';
+    const slug = trimmedGroupId
+      ? baseSlug
+      : await this.generateUniqueSlug(baseSlug);
+
     const existing = await this.prisma.group.findUnique({ where: { slug } });
-    if (existing) throw new ConflictException('Group with this name already exists');
+    if (existing) throw new ConflictException('Group with this ID already exists');
 
     return this.prisma.group.create({
       data: { name: data.name, slug, description: data.description },
     });
   }
 
-  async update(id: string, data: { name?: string; description?: string; isActive?: boolean }) {
+  async update(id: string, data: { name?: string; groupId?: string; description?: string; isActive?: boolean }) {
     await this.findOne(id);
     const updateData: any = { ...data };
-    if (data.name) {
-      updateData.slug = data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (data.groupId) {
+      updateData.slug = this.slugify(data.groupId);
+      const existing = await this.prisma.group.findFirst({ where: { slug: updateData.slug, NOT: { id } } });
+      if (existing) throw new ConflictException('Group with this ID already exists');
+    } else if (data.name) {
+      updateData.slug = this.slugify(data.name);
     }
     return this.prisma.group.update({ where: { id }, data: updateData });
   }

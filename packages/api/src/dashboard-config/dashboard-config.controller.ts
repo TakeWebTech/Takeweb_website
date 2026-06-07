@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { DashboardConfigService } from './dashboard-config.service';
-import { CurrentUser } from '../auth/decorators';
+import { CurrentUser, JwtAuthGuard, Permissions, RbacGuard } from '../auth';
 
 @Controller('dashboard-config')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard, RbacGuard)
+@Permissions('dashboard.read')
 export class DashboardConfigController {
   constructor(private readonly dashboardConfigService: DashboardConfigService) {}
 
@@ -21,11 +21,13 @@ export class DashboardConfigController {
   getAllLayouts(@CurrentUser() user: any) { return this.dashboardConfigService.getAllLayouts(user.id); }
 
   @Post('layout')
+  @Permissions('dashboard.write')
   saveLayout(@CurrentUser() user: any, @Body() body: { name?: string; widgets: any[]; isDefault?: boolean }) {
     return this.dashboardConfigService.saveLayout(user.id, body);
   }
 
   @Delete('layout/:name')
+  @Permissions('dashboard.write')
   deleteLayout(@CurrentUser() user: any, @Param('name') name: string) {
     return this.dashboardConfigService.deleteLayout(user.id, name);
   }

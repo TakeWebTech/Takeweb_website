@@ -8,11 +8,13 @@ import {
     Query,
     DefaultValuePipe,
     ParseIntPipe,
+    Patch,
+    Delete,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ContactService } from './contact.service';
 import { CreateContactDto } from './dto';
-import { Roles, RolesGuard } from '../auth';
+import { ContactStatus } from './contact.service';
+import { JwtAuthGuard, Permissions, RbacGuard } from '../auth';
 
 @Controller('contact')
 export class ContactController {
@@ -25,8 +27,8 @@ export class ContactController {
 
     // Admin endpoints
     @Get('admin')
-    @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Roles('ADMIN', 'EDITOR')
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('contact.read')
     async getAllSubmissions(
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
         @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
@@ -36,9 +38,26 @@ export class ContactController {
     }
 
     @Get('admin/:id')
-    @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Roles('ADMIN', 'EDITOR')
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('contact.read')
     async getSubmission(@Param('id') id: string) {
         return this.contactService.getSubmissionById(id);
+    }
+
+    @Patch('admin/:id')
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('contact.write')
+    async updateSubmission(
+        @Param('id') id: string,
+        @Body() body: { status?: ContactStatus; notes?: string },
+    ) {
+        return this.contactService.updateSubmission(id, body);
+    }
+
+    @Delete('admin/:id')
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('contact.delete')
+    async deleteSubmission(@Param('id') id: string) {
+        return this.contactService.deleteSubmission(id);
     }
 }

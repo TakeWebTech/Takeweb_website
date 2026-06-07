@@ -3,7 +3,6 @@ import {
     IsOptional,
     IsEnum,
     IsArray,
-    IsUUID,
 } from 'class-validator';
 
 // Post status enum (matching Prisma schema)
@@ -31,7 +30,7 @@ export class CreatePostDto {
     @IsOptional()
     status?: PostStatus;
 
-    @IsUUID()
+    @IsString()
     @IsOptional()
     categoryId?: string;
 
@@ -48,8 +47,14 @@ export class CreatePostDto {
     metaDescription?: string;
 
     @IsArray()
+    @IsString({ each: true })
     @IsOptional()
     tagIds?: string[];
+
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    tags?: string[];
 }
 
 export class UpdatePostDto {
@@ -73,7 +78,7 @@ export class UpdatePostDto {
     @IsOptional()
     status?: PostStatus;
 
-    @IsUUID()
+    @IsString()
     @IsOptional()
     categoryId?: string;
 
@@ -88,4 +93,14 @@ export class UpdatePostDto {
     @IsString()
     @IsOptional()
     metaDescription?: string;
+
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    tagIds?: string[];
+
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    tags?: string[];
 }

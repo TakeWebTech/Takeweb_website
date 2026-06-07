@@ -30,6 +30,22 @@ export class MediaService {
         });
     }
 
+    async createUploadedMedia(files: any[]) {
+        return Promise.all(
+            files.map((file) =>
+                this.prisma.media.create({
+                    data: {
+                        filename: file.filename,
+                        originalName: file.originalname,
+                        url: `/uploads/${file.filename}`,
+                        mimeType: file.mimetype,
+                        fileSize: file.size,
+                    },
+                }),
+            ),
+        );
+    }
+
     async updateMedia(id: string, dto: UpdateMediaDto) {
         const media = await this.prisma.media.findUnique({ where: { id } });
 

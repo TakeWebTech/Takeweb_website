@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { SeoService } from './seo.service';
@@ -32,8 +33,11 @@ import {
   UpdateSchemaTemplateDto,
   RunSeoAuditDto,
 } from './dto';
+import { JwtAuthGuard, Permissions, RbacGuard } from '../auth';
 
 @Controller('seo')
+@UseGuards(JwtAuthGuard, RbacGuard)
+@Permissions('seo.manage')
 export class SeoController {
   constructor(
     private readonly seoService: SeoService,

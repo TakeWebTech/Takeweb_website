@@ -10,8 +10,8 @@ interface MediaItem {
     id: string;
     filename: string;
     url: string;
-    mimetype: string;
-    size: number;
+    mimeType: string;
+    fileSize: number;
     createdAt: string;
 }
 
@@ -25,6 +25,11 @@ function getIcon(mime: string) {
     if (mime?.startsWith("image/")) return FileImage;
     if (mime?.startsWith("video/")) return Film;
     return File;
+}
+
+function resolveMediaUrl(url: string) {
+    if (!url || url.startsWith("http")) return url;
+    return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}${url}`;
 }
 
 export default function MediaPage() {
@@ -132,22 +137,22 @@ export default function MediaPage() {
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 stagger-children">
                     {filtered.map((item) => {
-                        const Icon = getIcon(item.mimetype);
-                        const isImage = item.mimetype?.startsWith("image/");
+                        const Icon = getIcon(item.mimeType);
+                        const isImage = item.mimeType?.startsWith("image/");
 
                         return (
                             <div key={item.id} className="card p-0 overflow-hidden group">
                                 {/* Preview */}
                                 <div className="aspect-square bg-dark-800 flex items-center justify-center relative">
                                     {isImage ? (
-                                        <img src={item.url} alt={item.filename} className="w-full h-full object-cover" />
+                                        <img src={resolveMediaUrl(item.url)} alt={item.filename} className="w-full h-full object-cover" />
                                     ) : (
                                         <Icon size={32} className="text-neutral-600" />
                                     )}
                                     {/* Overlay */}
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                         <button
-                                            onClick={() => copyUrl(item.url)}
+                                            onClick={() => copyUrl(resolveMediaUrl(item.url))}
                                             className="w-8 h-8 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
                                             title="Copy URL"
                                         >
@@ -165,7 +170,7 @@ export default function MediaPage() {
                                 {/* Info */}
                                 <div className="px-3 py-2">
                                     <p className="text-xs font-medium text-neutral-300 truncate">{item.filename}</p>
-                                    <p className="text-[0.65rem] text-neutral-600">{formatSize(item.size)}</p>
+                                    <p className="text-[0.65rem] text-neutral-600">{formatSize(item.fileSize)}</p>
                                 </div>
                             </div>
                         );

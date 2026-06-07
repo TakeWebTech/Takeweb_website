@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "react-hot-toast";
 import Link from "next/link";
 import {
-    FileText, Users, MessageSquare, Briefcase, TrendingUp,
+    FileText, Users, MessageSquare, Briefcase, TrendingUp, TrendingDown,
     Plus, ArrowRight, Activity, Globe, FileStack, Clock,
     CheckCircle2, UserPlus, FolderOpen, BarChart3, CalendarDays,
     Megaphone, Zap, ListTodo, Star, Settings, GripVertical,
     X, LayoutDashboard, UserCog, Bell, MapPin, Eye, EyeOff,
+    LogIn, LogOut, Building2, User,
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -28,6 +30,301 @@ interface WidgetDef {
 const base = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000") : "";
 const getToken = () => typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 const headers = () => ({ Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" });
+
+/* ═══════════════════════════════════════════════ */
+/*          PERMANENT WIDGETS (Non-removable)       */
+/* ═══════════════════════════════════════════════ */
+
+/* ─── 1. Profile Card Widget ─── */
+function ProfileCardWidget({ user }: { user: any }) {
+    const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`;
+    return (
+        <div className="flex items-center gap-5 flex-wrap">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-primary-500/20 flex-shrink-0">
+                {initials || "?"}
+            </div>
+            <div className="flex-1 min-w-[200px]">
+                <h3 className="text-lg font-bold text-white">{user?.firstName} {user?.lastName}</h3>
+                <p className="text-xs text-neutral-500">{user?.email}</p>
+            </div>
+            <div className="flex flex-wrap gap-4 text-xs">
+                {[
+                    { label: "Employee ID", value: user?.id?.slice(0, 8)?.toUpperCase() || "—", icon: User, color: "text-blue-400" },
+                    { label: "Department", value: user?.department || "General", icon: Building2, color: "text-emerald-400" },
+                    { label: "Role", value: user?.role || "—", icon: Star, color: "text-amber-400" },
+                    { label: "Manager", value: "Admin", icon: UserCog, color: "text-purple-400" },
+                ].map((item) => (
+                    <div key={item.label} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-dark-800/60 border border-dark-700/50 min-w-[140px]">
+                        <item.icon size={14} className={item.color} />
+                        <div>
+                            <p className="text-[10px] text-neutral-600">{item.label}</p>
+                            <p className="text-neutral-300 font-medium">{item.value}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/* ─── 2. Review & Rating Widget ─── */
+function ReviewRatingWidget(_: { user: any }) {
+    const [stats, setStats] = useState<any>(null);
+
+    useEffect(() => {
+        fetch(`${base}/api/v1/reviews/stats`, { headers: headers() })
+            .then(res => res.ok ? res.json() : null)
+            .then(data => setStats(data));
+    }, []);
+
+    if (!stats) {
+        return (
+            <div className="flex flex-col items-center justify-center p-6 rounded-xl bg-dark-800/50 border border-dark-700/50 text-center h-full">
+                <Star size={32} className="text-dark-600 mb-3 animate-pulse" />
+                <h3 className="text-neutral-300 font-medium">Loading Ratings...</h3>
+            </div>
+        );
+    }
+
+    const ratings = [
+        { label: "This Week", value: stats.currentWeek?.rating || 0, prev: stats.lastWeek?.rating || 0 },
+        { label: "This Month", value: stats.currentMonth?.rating || 0, prev: stats.lastMonth?.rating || 0 },
+        { label: "Last Week", value: stats.lastWeek?.rating || 0, prev: 0 },
+        { label: "Last Month", value: stats.lastMonth?.rating || 0, prev: 0 },
+    ];
+
+    return (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {ratings.map((r) => {
+                const trend = r.value - r.prev;
+                const isUp = trend >= 0;
+                return (
+                    <div key={r.label} className="p-3 rounded-xl bg-dark-800/50 border border-dark-700/50 text-center flex flex-col justify-between">
+                        <p className="text-[10px] text-neutral-500 mb-1.5">{r.label}</p>
+                        <div className="flex items-center justify-center gap-1 mb-1.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                                <Star key={s} size={14} className={s <= Math.round(r.value) ? "text-amber-400 fill-amber-400" : "text-dark-600"} />
+                            ))}
+                        </div>
+                        <p className="text-lg font-bold text-white">{r.value.toFixed(1)}</p>
+                        {r.prev > 0 ? (
+                            <div className={`flex items-center justify-center gap-0.5 text-[10px] mt-1 ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+                                {isUp ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                <span>{isUp ? "+" : ""}{trend.toFixed(1)} vs prev</span>
+                            </div>
+                        ) : (
+                            <div className="h-4" />
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+/* ─── 3. Attendance Clock Widget ─── */
+function AttendanceClockWidget(_: { user: any }) {
+    const [mounted, setMounted] = useState(false);
+    const [now, setNow] = useState(new Date());
+    const [checkedIn, setCheckedIn] = useState(false);
+    const [checkInTime, setCheckInTime] = useState<Date | null>(null);
+    const [elapsed, setElapsed] = useState("00:00:00");
+    const [loading, setLoading] = useState(true);
+    const [verifyingLocation, setVerifyingLocation] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [actionMessage, setActionMessage] = useState<string | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Initial Fetch + Polling
+    useEffect(() => {
+        const fetchStatus = () => {
+            fetch(`${base}/api/v1/attendance/status`, { headers: headers() })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data && data.status === "ACTIVE" && data.checkinTime) {
+                        setCheckedIn(true);
+                        setCheckInTime(new Date(data.checkinTime));
+                    } else {
+                        setCheckedIn(false);
+                        setCheckInTime(null);
+                    }
+                })
+                .catch(() => {
+                    setCheckedIn(false);
+                    setCheckInTime(null);
+                })
+                .finally(() => setLoading(false));
+        };
+
+        fetchStatus();
+        const interval = setInterval(fetchStatus, 60000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Real-time clock
+    useEffect(() => {
+        setMounted(true);
+        const interval = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Working time counter
+    useEffect(() => {
+        if (checkedIn && checkInTime) {
+            timerRef.current = setInterval(() => {
+                const diff = Date.now() - checkInTime.getTime();
+                const h = Math.floor(diff / 3600000).toString().padStart(2, "0");
+                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, "0");
+                const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, "0");
+                setElapsed(`${h}:${m}:${s}`);
+            }, 1000);
+        }
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }, [checkedIn, checkInTime]);
+
+    const handlePunchIn = async () => {
+        if (!navigator.geolocation) {
+            toast.error("Geolocation is not supported by your browser");
+            return;
+        }
+
+        if (verifyingLocation || submitting || checkedIn) return;
+
+        setVerifyingLocation(true);
+        setActionMessage("Verifying Location...");
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            
+            try {
+                setVerifyingLocation(false);
+                setSubmitting(true);
+                setActionMessage("Punching In...");
+                const res = await fetch(`${base}/api/v1/attendance/punch-in`, {
+                    method: "POST",
+                    headers: headers(),
+                    body: JSON.stringify({ latitude, longitude, accuracy }),
+                });
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => null);
+                    throw new Error(errData?.message || "Unable to punch in");
+                }
+                const data = await res.json();
+                setCheckedIn(true); setCheckInTime(new Date(data.checkinTime)); setElapsed("00:00:00");
+                setActionMessage("Punch-In Successful");
+                toast.success("Punch-In successful");
+                setTimeout(() => setActionMessage(null), 2000);
+            } catch (err: any) {
+                toast.error("Failed to punch in: " + err.message);
+                setActionMessage(null);
+            } finally {
+                setSubmitting(false);
+            }
+        }, (error) => {
+            setVerifyingLocation(false);
+            setActionMessage(null);
+            toast.error("Location access denied. Cannot punch in.");
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    };
+
+    const handlePunchOut = async () => {
+        if (checkInTime) {
+            const diffHours = (Date.now() - checkInTime.getTime()) / 3600000;
+            if (diffHours < 8) {
+                if (!window.confirm("You are punching out early. Your hours will be marked incomplete. Are you sure you want to proceed?")) {
+                    return;
+                }
+            }
+        }
+
+        if (verifyingLocation || submitting || !checkedIn) return;
+        setSubmitting(true);
+        setActionMessage("Punching Out...");
+        try {
+            const res = await fetch(`${base}/api/v1/attendance/punch-out`, {
+                method: "POST", headers: headers()
+            });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => null);
+                throw new Error(errData?.message || "Unable to punch out");
+            }
+            setCheckedIn(false); if (timerRef.current) clearInterval(timerRef.current);
+            toast.success("Punch-Out successful");
+            setActionMessage(null);
+        } catch (err: any) {
+            toast.error("Failed to punch out: " + err.message);
+            setActionMessage(null);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const timeStr = mounted ? now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true }) : "--:--:--";
+    const dateStr = mounted ? now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : "Loading...";
+
+    return (
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+            {/* Live Clock */}
+            <div className="text-center sm:text-left flex-shrink-0">
+                <p className="text-3xl font-mono font-bold text-white tracking-wider">{timeStr}</p>
+                <p className="text-xs text-neutral-500 mt-1">{dateStr}</p>
+            </div>
+
+            <div className="h-12 w-px bg-dark-700 hidden sm:block" />
+
+            {/* Punch-In / Punch-Out */}
+            <div className="flex items-center gap-3">
+                {loading ? (
+                    <div className="h-10 w-32 rounded-xl bg-dark-700 animate-pulse" />
+                ) : !checkedIn ? (
+                    <button
+                        onClick={handlePunchIn}
+                        disabled={verifyingLocation || submitting}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold text-sm shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        <LogIn size={16} /> {verifyingLocation ? "Verifying Location..." : submitting ? "Punching In..." : "Punch In"}
+                    </button>
+                ) : (
+                    <button
+                        onClick={handlePunchOut}
+                        disabled={submitting}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold text-sm shadow-lg shadow-red-500/20 hover:shadow-red-500/40 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        <LogOut size={16} /> {submitting ? "Punching Out..." : "Punch Out"}
+                    </button>
+                )}
+                {actionMessage && (
+                    <span className="text-xs text-neutral-400">{actionMessage}</span>
+                )}
+            </div>
+
+            <div className="h-12 w-px bg-dark-700 hidden sm:block" />
+
+            {/* Status & Working Time */}
+            <div className="flex items-center gap-4">
+                <div className="text-center">
+                    <p className="text-[10px] text-neutral-500 mb-0.5">Status</p>
+                    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${checkedIn ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-neutral-500/10 text-neutral-400 border border-neutral-500/20"}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${checkedIn ? "bg-emerald-400 animate-pulse" : "bg-neutral-500"}`} />
+                        {checkedIn ? "Punched In" : "Not Punched In"}
+                    </span>
+                </div>
+                <div className="text-center">
+                    <p className="text-[10px] text-neutral-500 mb-0.5">Working Time</p>
+                    <p className="text-lg font-mono font-bold text-primary-400">{elapsed}</p>
+                </div>
+                {checkInTime && (
+                    <div className="text-center">
+                        <p className="text-[10px] text-neutral-500 mb-0.5">Punch-In At</p>
+                        <p className="text-xs font-mono text-neutral-300">{checkInTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 
 /* ─── Widget: Stats Overview ─── */
 function StatsOverviewWidget({ stats }: { stats: any; user: any }) {
@@ -162,13 +459,30 @@ function CompanyHolidaysWidget(_: { stats: any; user: any }) {
 
 /* ─── Widget: Attendance Summary ─── */
 function AttendanceSummaryWidget(_: { stats: any; user: any }) {
+    const [analytics, setAnalytics] = useState<any>(null);
+
+    useEffect(() => {
+        fetch(`${base}/api/v1/attendance/analytics`, { headers: headers() })
+            .then((res) => res.ok ? res.json() : null)
+            .then((data) => setAnalytics(data))
+            .catch(() => setAnalytics(null));
+    }, []);
+
+    const present = analytics?.presentDays ?? 0;
+    const late = analytics?.lateCount ?? 0;
+    const absent = analytics?.absentDays ?? 0;
+    const total = analytics?.totalWorkingDays ?? Math.max(1, present + late + absent);
+    const presentPct = Math.min(100, Math.round((present / total) * 100));
+    const latePct = Math.min(100, Math.round((late / total) * 100));
+    const absentPct = Math.max(0, 100 - presentPct - latePct);
+
     return (
         <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2 text-center">
                 {[
-                    { label: "Present", val: "22", color: "text-emerald-400" },
-                    { label: "Leave", val: "2", color: "text-amber-400" },
-                    { label: "Absent", val: "1", color: "text-red-400" },
+                    { label: "Present", val: present.toString(), color: "text-emerald-400" },
+                    { label: "Late", val: late.toString(), color: "text-amber-400" },
+                    { label: "Absent", val: absent.toString(), color: "text-red-400" },
                 ].map(s => (
                     <div key={s.label} className="p-2.5 rounded-lg bg-dark-800/50">
                         <p className={`text-lg font-bold ${s.color}`}>{s.val}</p>
@@ -177,11 +491,11 @@ function AttendanceSummaryWidget(_: { stats: any; user: any }) {
                 ))}
             </div>
             <div className="h-2 bg-dark-700 rounded-full overflow-hidden flex">
-                <div className="bg-emerald-500 h-full" style={{ width: "88%" }} />
-                <div className="bg-amber-500 h-full" style={{ width: "8%" }} />
-                <div className="bg-red-500 h-full" style={{ width: "4%" }} />
+                <div className="bg-emerald-500 h-full" style={{ width: `${presentPct}%` }} />
+                <div className="bg-amber-500 h-full" style={{ width: `${latePct}%` }} />
+                <div className="bg-red-500 h-full" style={{ width: `${absentPct}%` }} />
             </div>
-            <p className="text-xs text-neutral-500 text-center">This Month — 25 working days</p>
+            <p className="text-xs text-neutral-500 text-center">This Month — {total} working days</p>
         </div>
     );
 }
@@ -406,6 +720,34 @@ export default function DashboardPage() {
                             <Link href="/dashboard/posts/new" className="btn-primary text-sm"><Plus size={14} /> New Post</Link>
                         </>
                     )}
+                </div>
+            </div>
+
+            {/* ═══ Permanent Widgets (Cannot be removed) ═══ */}
+            <div className="space-y-4">
+                <div className="card border-primary-500/10 bg-gradient-to-r from-dark-850 to-dark-900">
+                    <div className="flex items-center gap-2 mb-3">
+                        <User size={16} className="text-primary-400" />
+                        <h2 className="text-sm font-semibold text-white">My Profile</h2>
+                    </div>
+                    <ProfileCardWidget user={user} />
+                </div>
+
+                <div className="grid lg:grid-cols-2 gap-4">
+                    <div className="card">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Star size={16} className="text-amber-400" />
+                            <h2 className="text-sm font-semibold text-white">Review & Rating</h2>
+                        </div>
+                        <ReviewRatingWidget user={user} />
+                    </div>
+                    <div className="card">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Clock size={16} className="text-emerald-400" />
+                            <h2 className="text-sm font-semibold text-white">Attendance</h2>
+                        </div>
+                        <AttendanceClockWidget user={user} />
+                    </div>
                 </div>
             </div>
 

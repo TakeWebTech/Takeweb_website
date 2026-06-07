@@ -38,6 +38,9 @@ export class ServicesService {
         return this.prisma.service.create({
             data: {
                 ...dto,
+                benefits: dto.benefits ?? [],
+                technologies: dto.technologies ?? [],
+                useCases: dto.useCases ?? [],
                 isActive: dto.isActive ?? true,
                 sortOrder: dto.sortOrder ?? 0,
             },
@@ -53,7 +56,12 @@ export class ServicesService {
 
         return this.prisma.service.update({
             where: { id },
-            data: dto,
+            data: {
+                ...dto,
+                benefits: dto.benefits ?? undefined,
+                technologies: dto.technologies ?? undefined,
+                useCases: dto.useCases ?? undefined,
+            },
         });
     }
 

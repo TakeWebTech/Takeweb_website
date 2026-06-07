@@ -31,10 +31,13 @@ export default function PostsPage() {
         try {
             const token = localStorage.getItem("accessToken");
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/v1/blog/admin/all`,
+                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/v1/blog/admin/posts`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            if (res.ok) setPosts(await res.json());
+            if (res.ok) {
+                const data = await res.json();
+                setPosts(Array.isArray(data) ? data : data.posts || []);
+            }
         } catch (e) {
             console.error("Failed:", e);
         } finally {
@@ -47,7 +50,7 @@ export default function PostsPage() {
         try {
             const token = localStorage.getItem("accessToken");
             await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/v1/blog/admin/${id}`,
+                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/v1/blog/admin/posts/${id}`,
                 { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
             );
             fetchPosts();
@@ -58,8 +61,8 @@ export default function PostsPage() {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case "published": return <span className="badge badge-success"><CheckCircle2 size={10} /> Published</span>;
-            case "draft": return <span className="badge badge-warning"><Clock size={10} /> Draft</span>;
+            case "PUBLISHED": return <span className="badge badge-success"><CheckCircle2 size={10} /> Published</span>;
+            case "DRAFT": return <span className="badge badge-warning"><Clock size={10} /> Draft</span>;
             default: return <span className="badge badge-neutral">{status}</span>;
         }
     };
@@ -106,13 +109,13 @@ export default function PostsPage() {
                     />
                 </div>
                 <div className="tab-list">
-                    {["all", "published", "draft"].map((s) => (
+                    {["all", "PUBLISHED", "DRAFT"].map((s) => (
                         <button
                             key={s}
                             onClick={() => setStatusFilter(s)}
                             className={`tab-item ${statusFilter === s ? "active" : ""}`}
                         >
-                            {s.charAt(0).toUpperCase() + s.slice(1)}
+                            {s === "all" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
                         </button>
                     ))}
                 </div>

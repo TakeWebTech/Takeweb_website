@@ -34,6 +34,15 @@ class ApiClient {
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ message: 'An error occurred' }));
+            if (response.status === 401 || response.status === 403) {
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('api-auth-error', { detail: { status: response.status } }));
+                    if (response.status === 401) {
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('user');
+                    }
+                }
+            }
             throw new Error(error.message || `HTTP ${response.status}`);
         }
 
@@ -115,12 +124,12 @@ export const endpoints = {
     },
     // Blog Posts
     posts: {
-        list: '/api/v1/blog',
-        adminList: '/api/v1/blog/admin/all',
-        create: '/api/v1/blog/admin',
-        get: (id: string) => `/api/v1/blog/admin/${id}`,
-        update: (id: string) => `/api/v1/blog/admin/${id}`,
-        delete: (id: string) => `/api/v1/blog/admin/${id}`,
+        list: '/api/v1/blog/posts',
+        adminList: '/api/v1/blog/admin/posts',
+        create: '/api/v1/blog/admin/posts',
+        get: (id: string) => `/api/v1/blog/admin/posts/${id}`,
+        update: (id: string) => `/api/v1/blog/admin/posts/${id}`,
+        delete: (id: string) => `/api/v1/blog/admin/posts/${id}`,
     },
     // Projects
     projects: {
@@ -162,7 +171,7 @@ export const endpoints = {
     // Contact
     contact: {
         list: '/api/v1/contact',
-        adminList: '/api/v1/contact/admin/all',
+        adminList: '/api/v1/contact/admin',
         get: (id: string) => `/api/v1/contact/admin/${id}`,
         update: (id: string) => `/api/v1/contact/admin/${id}`,
         delete: (id: string) => `/api/v1/contact/admin/${id}`,
@@ -190,7 +199,7 @@ export const endpoints = {
     // Testimonials
     testimonials: {
         list: '/api/v1/testimonials',
-        adminList: '/api/v1/testimonials/admin/all',
+        adminList: '/api/v1/testimonials/admin',
         create: '/api/v1/testimonials/admin',
         get: (id: string) => `/api/v1/testimonials/admin/${id}`,
         update: (id: string) => `/api/v1/testimonials/admin/${id}`,
@@ -199,7 +208,10 @@ export const endpoints = {
     // Pages
     pages: {
         list: '/api/v1/pages',
-        get: (slug: string) => `/api/v1/pages/${slug}`,
-        update: (slug: string) => `/api/v1/pages/${slug}`,
+        adminList: '/api/v1/pages/admin',
+        create: '/api/v1/pages/admin',
+        get: (id: string) => `/api/v1/pages/admin/${id}`,
+        update: (id: string) => `/api/v1/pages/admin/${id}`,
+        delete: (id: string) => `/api/v1/pages/admin/${id}`,
     },
 };

@@ -20,9 +20,10 @@ interface Service {
     id: string;
     title: string;
     slug: string;
-    description: string;
+    shortDescription: string;
+    content: string;
     isActive: boolean;
-    order: number;
+    sortOrder: number;
     createdAt: string;
 }
 
@@ -153,7 +154,7 @@ export default function ServicesPage() {
                                     </td>
                                     <td className="hidden md:table-cell">
                                         <span className="text-sm text-neutral-400 line-clamp-1 max-w-[250px] block">
-                                            {svc.description}
+                                            {svc.shortDescription || svc.content}
                                         </span>
                                     </td>
                                     <td>
@@ -166,7 +167,7 @@ export default function ServicesPage() {
                                         </button>
                                     </td>
                                     <td className="hidden sm:table-cell">
-                                        <span className="text-neutral-500 font-mono text-sm">{svc.order}</span>
+                                        <span className="text-neutral-500 font-mono text-sm">{svc.sortOrder}</span>
                                     </td>
                                     <td>
                                         <div className="flex items-center justify-end gap-1">

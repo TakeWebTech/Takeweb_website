@@ -56,12 +56,19 @@ export class ProjectsService {
     }
 
     async createProject(dto: CreateProjectDto) {
+        const { images, serviceId, ...data } = dto;
         return this.prisma.project.create({
             data: {
-                ...dto,
+                ...data,
+                technologies: dto.technologies ?? [],
+                serviceId: serviceId?.trim() ? serviceId : undefined,
                 isActive: dto.isActive ?? true,
                 isFeatured: dto.isFeatured ?? false,
+                images: images?.length
+                    ? { create: images.map((url, index) => ({ url, sortOrder: index })) }
+                    : undefined,
             },
+            include: { images: true, service: { select: { id: true, title: true } } },
         });
     }
 
@@ -72,9 +79,24 @@ export class ProjectsService {
             throw new NotFoundException('Project not found');
         }
 
-        return this.prisma.project.update({
-            where: { id },
-            data: dto,
+        const { images, serviceId, ...data } = dto;
+        return this.prisma.$transaction(async (tx) => {
+            if (images) {
+                await tx.projectImage.deleteMany({ where: { projectId: id } });
+            }
+
+            return tx.project.update({
+                where: { id },
+                data: {
+                    ...data,
+                    technologies: dto.technologies ?? undefined,
+                    serviceId: serviceId !== undefined ? (serviceId.trim() ? serviceId : null) : undefined,
+                    images: images
+                        ? { create: images.map((url, index) => ({ url, sortOrder: index })) }
+                        : undefined,
+                },
+                include: { images: true, service: { select: { id: true, title: true } } },
+            });
         });
     }
 

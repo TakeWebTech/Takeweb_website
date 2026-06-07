@@ -18,8 +18,17 @@ const EMPLOYEE_SELECT = {
   workType: true,
   department: true,
   location: true,
+  designation: true,
   phone: true,
   lifecycleStatus: true,
+  isDirector: true,
+  portalAccess: true,
+  shiftStart: true,
+  shiftEnd: true,
+  shiftGraceBeforeMinutes: true,
+  shiftGraceAfterMinutes: true,
+  lateGraceMinutes: true,
+  shiftTimezone: true,
   groupId: true,
   teamId: true,
   customRoleId: true,
@@ -33,6 +42,18 @@ const EMPLOYEE_SELECT = {
 @Injectable()
 export class EmployeesService {
   constructor(private prisma: PrismaService) {}
+
+  private normalizeOptionalId(value?: string) {
+    if (!value) return undefined;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  private normalizeNullableId(value?: string) {
+    if (value === undefined) return undefined;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
 
   async findAll(query?: { search?: string; department?: string; workType?: string; status?: string; groupId?: string; teamId?: string }) {
     const where: any = {};
@@ -71,6 +92,29 @@ export class EmployeesService {
     return employee;
   }
 
+  private async resolveDepartmentId(departmentInput?: string): Promise<string | null> {
+    const trimmed = departmentInput?.trim();
+    if (!trimmed) return null;
+
+    // Check if it's already a cuid (basic heuristic)
+    if (trimmed.startsWith('c') && trimmed.length === 25) {
+        return trimmed;
+    }
+
+    // Try to find or create by name
+    let dept = await this.prisma.department.findUnique({
+        where: { name: trimmed }
+    });
+
+    if (!dept) {
+        dept = await this.prisma.department.create({
+            data: { name: trimmed }
+        });
+    }
+
+    return dept.id;
+  }
+
   async create(dto: CreateEmployeeDto) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) throw new ConflictException('Email already exists');
@@ -81,11 +125,16 @@ export class EmployeesService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
-    const { password, ...data } = dto;
+    const { password, department, ...data } = dto as any;
+    const departmentId = await this.resolveDepartmentId(department);
 
     return this.prisma.user.create({
       data: {
         ...data,
+        departmentId,
+        groupId: this.normalizeNullableId(dto.groupId) || null,
+        teamId: this.normalizeNullableId(dto.teamId) || null,
+        customRoleId: this.normalizeNullableId(dto.customRoleId) || null,
         passwordHash,
         role: (dto.role as any) || 'AUTHOR',
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
@@ -99,9 +148,25 @@ export class EmployeesService {
   async update(id: string, dto: UpdateEmployeeDto) {
     await this.findOne(id);
 
-    const data: any = { ...dto };
+    const { department, ...rest } = dto as any;
+    const data: any = { ...rest };
+    
+    if (department !== undefined) {
+      data.departmentId = await this.resolveDepartmentId(department);
+    }
+    
+    if (dto.password !== undefined) {
+      const trimmed = dto.password.trim();
+      if (trimmed) {
+        data.passwordHash = await bcrypt.hash(trimmed, 12);
+      }
+      delete data.password;
+    }
     if (dto.dateOfBirth) data.dateOfBirth = new Date(dto.dateOfBirth);
     if (dto.joiningDate) data.joiningDate = new Date(dto.joiningDate);
+    if (dto.groupId !== undefined) data.groupId = this.normalizeNullableId(dto.groupId);
+    if (dto.teamId !== undefined) data.teamId = this.normalizeNullableId(dto.teamId);
+    if (dto.customRoleId !== undefined) data.customRoleId = this.normalizeNullableId(dto.customRoleId);
 
     return this.prisma.user.update({
       where: { id },
@@ -140,9 +205,9 @@ export class EmployeesService {
     ]);
 
     const byDepartment = await this.prisma.user.groupBy({
-      by: ['department'],
+      by: ['departmentId'],
       _count: true,
-      where: { department: { not: null } },
+      where: { departmentId: { not: null } },
     });
 
     const byWorkType = await this.prisma.user.groupBy({

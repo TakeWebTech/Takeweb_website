@@ -66,4 +66,17 @@ export class ContactService {
 
         return submission;
     }
+
+    async updateSubmission(id: string, data: { status?: ContactStatus; notes?: string }) {
+        await this.getSubmissionById(id);
+        return this.prisma.contactSubmission.update({
+            where: { id },
+            data,
+        });
+    }
+
+    async deleteSubmission(id: string) {
+        await this.getSubmissionById(id);
+        return this.prisma.contactSubmission.delete({ where: { id } });
+    }
 }

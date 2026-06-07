@@ -14,7 +14,7 @@ async function main() {
       passwordHash: hash,
       firstName: 'TakeWeb',
       lastName: 'Admin',
-      role: 'ADMIN',
+      role: 'SUPER_ADMIN',
       isActive: true,
       department: 'Management',
       workType: 'ONSITE',

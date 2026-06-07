@@ -54,7 +54,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
         excerpt: "",
         content: "",
         categoryId: "",
-        status: "draft",
+        status: "DRAFT",
         metaTitle: "",
         metaDescription: "",
         coverImage: "",
@@ -67,7 +67,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
 
     const fetchCategories = async () => {
         try {
-            const data = await api.get<Category[]>("/api/v1/categories");
+            const data = await api.get<Category[]>("/api/v1/blog/categories");
             setCategories(data);
         } catch {
             setCategories([
@@ -88,7 +88,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
                 excerpt: post.excerpt || "",
                 content: post.content || "",
                 categoryId: post.categoryId || "",
-                status: post.status || "draft",
+                status: post.status || "DRAFT",
                 metaTitle: post.metaTitle || "",
                 metaDescription: post.metaDescription || "",
                 coverImage: post.coverImage || "",
@@ -191,9 +191,9 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
                     >
                         <Save size={16} /> {saving ? "Saving..." : "Save"}
                     </button>
-                    {formData.status !== "published" && (
+                    {formData.status !== "PUBLISHED" && (
                         <button
-                            onClick={() => handleSubmit("published")}
+                            onClick={() => handleSubmit("PUBLISHED")}
                             disabled={saving || !formData.title}
                             className="btn-primary disabled:opacity-50"
                         >
@@ -319,8 +319,8 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
                         <div className="space-y-2 text-sm">
                             <div className="flex items-center justify-between">
                                 <span className="text-neutral-400">Status</span>
-                                <span className={`badge ${formData.status === "published" ? "badge-success" : "badge-warning"}`}>
-                                    {formData.status === "published" ? "Published" : "Draft"}
+                                <span className={`badge ${formData.status === "PUBLISHED" ? "badge-success" : "badge-warning"}`}>
+                                    {formData.status === "PUBLISHED" ? "Published" : "Draft"}
                                 </span>
                             </div>
                         </div>

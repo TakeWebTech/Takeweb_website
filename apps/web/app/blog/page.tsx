@@ -18,23 +18,24 @@ interface BlogPost {
     excerpt: string;
     content: string;
     coverImage: string;
-    author: string;
-    category: string;
+    author: { firstName: string; lastName: string };
+    category?: { name: string };
     readTime: number;
     publishedAt: string;
-    isFeatured: boolean;
-    isPublished: boolean;
+    status: string;
+    viewCount: number;
 }
 
 async function getBlogPosts(): Promise<BlogPost[]> {
     try {
         const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/blog`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/blog/posts`,
             { next: { revalidate: 1800 } } // Cache for 30 minutes
         );
         if (!res.ok) return [];
         const data = await res.json();
-        return data.filter((post: BlogPost) => post.isPublished);
+        const posts = Array.isArray(data) ? data : data.posts || [];
+        return posts;
     } catch (error) {
         console.error('Failed to fetch blog posts:', error);
         return [];
@@ -52,8 +53,8 @@ const categories = [
 
 export default async function BlogPage() {
     const allPosts = await getBlogPosts();
-    const featuredPost = allPosts.find(post => post.isFeatured) || allPosts[0];
-    const regularPosts = allPosts.filter(post => !post.isFeatured).slice(0, 6);
+    const featuredPost = allPosts[0];
+    const regularPosts = allPosts.slice(1, 7);
 
     return (
         <>
@@ -125,7 +126,7 @@ export default async function BlogPage() {
                                     </div>
                                     <div className="p-8 md:p-10 flex flex-col justify-center">
                                         <span className="text-sm font-medium text-primary-500 mb-3">
-                                            {featuredPost.category}
+                                            {featuredPost.category?.name || "Insights"}
                                         </span>
                                         <h2 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-4 group-hover:text-primary-500 transition-colors">
                                             {featuredPost.title}
@@ -136,11 +137,11 @@ export default async function BlogPage() {
                                         <div className="flex items-center gap-4 text-sm text-[var(--text-muted)]">
                                             <span className="flex items-center gap-1">
                                                 <User size={14} />
-                                                {featuredPost.author}
+                                                {featuredPost.author?.firstName} {featuredPost.author?.lastName}
                                             </span>
                                             <span className="flex items-center gap-1">
                                                 <Clock size={14} />
-                                                {featuredPost.readTime} min read
+                                                {Math.max(1, Math.ceil((featuredPost.content?.length || 600) / 1200))} min read
                                             </span>
                                         </div>
                                     </div>
@@ -186,7 +187,7 @@ export default async function BlogPage() {
                                             </div>
                                             <div className="p-6">
                                                 <span className="text-xs font-medium text-primary-500 mb-2 block">
-                                                    {post.category}
+                                                    {post.category?.name || "Insights"}
                                                 </span>
                                                 <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2 group-hover:text-primary-500 transition-colors line-clamp-2">
                                                     {post.title}
@@ -196,7 +197,7 @@ export default async function BlogPage() {
                                                 </p>
                                                 <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
                                                     <span>{new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                                    <span>{post.readTime} min read</span>
+                                                    <span>{Math.max(1, Math.ceil((post.content?.length || 600) / 1200))} min read</span>
                                                 </div>
                                             </div>
                                         </Card3D>

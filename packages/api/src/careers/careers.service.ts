@@ -64,6 +64,7 @@ export class CareersService {
         return this.prisma.career.create({
             data: {
                 ...dto,
+                benefits: dto.benefits ?? [],
                 isActive: dto.isActive ?? true,
                 deadline: dto.deadline ? new Date(dto.deadline) : null,
             },
@@ -81,6 +82,7 @@ export class CareersService {
             where: { id },
             data: {
                 ...dto,
+                benefits: dto.benefits ?? undefined,
                 deadline: dto.deadline ? new Date(dto.deadline) : undefined,
             },
         });

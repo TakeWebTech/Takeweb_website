@@ -75,7 +75,7 @@ export class RulesService {
     });
 
     if (!user) return { allowed: false, reason: 'User not found' };
-    if (user.role === 'ADMIN') return { allowed: true, reason: 'Admin bypass' };
+    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') return { allowed: true, reason: 'Admin bypass' };
 
     // Fetch applicable rules (individual > team > group, highest priority first)
     const rules = await this.prisma.rule.findMany({

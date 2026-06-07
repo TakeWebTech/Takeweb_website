@@ -40,7 +40,7 @@ export default function NewPostPage() {
         excerpt: "",
         content: "",
         categoryId: "",
-        status: "draft" as "draft" | "published",
+        status: "DRAFT" as "DRAFT" | "PUBLISHED",
         metaTitle: "",
         metaDescription: "",
         coverImage: "",
@@ -52,7 +52,7 @@ export default function NewPostPage() {
 
     const fetchCategories = async () => {
         try {
-            const data = await api.get<Category[]>("/api/v1/categories");
+            const data = await api.get<Category[]>("/api/v1/blog/categories");
             setCategories(data);
         } catch {
             setCategories([
@@ -95,13 +95,13 @@ export default function NewPostPage() {
         }
     };
 
-    const handleSubmit = async (status: "draft" | "published") => {
+    const handleSubmit = async (status: "DRAFT" | "PUBLISHED") => {
         setLoading(true);
         try {
             const payload = { ...formData, status, tags };
             await api.post(endpoints.posts.create, payload);
             showToast(
-                status === "published" ? "Post published!" : "Draft saved!",
+                status === "PUBLISHED" ? "Post published!" : "Draft saved!",
                 "success"
             );
             router.push("/dashboard/posts");
@@ -136,14 +136,14 @@ export default function NewPostPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => handleSubmit("draft")}
+                        onClick={() => handleSubmit("DRAFT")}
                         disabled={loading || !formData.title}
                         className="btn-secondary disabled:opacity-50"
                     >
                         <Save size={16} /> Save Draft
                     </button>
                     <button
-                        onClick={() => handleSubmit("published")}
+                        onClick={() => handleSubmit("PUBLISHED")}
                         disabled={loading || !formData.title}
                         className="btn-primary disabled:opacity-50"
                     >
@@ -413,9 +413,9 @@ export default function NewPostPage() {
                             <div className="flex items-center justify-between">
                                 <span className="text-neutral-400">Status</span>
                                 <span
-                                    className={`badge ${formData.status === "published" ? "badge-success" : "badge-warning"}`}
+                                    className={`badge ${formData.status === "PUBLISHED" ? "badge-success" : "badge-warning"}`}
                                 >
-                                    {formData.status === "published"
+                                    {formData.status === "PUBLISHED"
                                         ? "Published"
                                         : "Draft"}
                                 </span>

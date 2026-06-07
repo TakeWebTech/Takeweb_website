@@ -10,11 +10,11 @@ import {
     UseGuards,
     ParseIntPipe,
     DefaultValuePipe,
+    Patch,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { BlogService } from './blog.service';
 import { CreatePostDto, UpdatePostDto } from './dto';
-import { Roles, CurrentUser, RolesGuard } from '../auth';
+import { CurrentUser, JwtAuthGuard, Permissions, RbacGuard } from '../auth';
 
 @Controller('blog')
 export class BlogController {
@@ -48,8 +48,8 @@ export class BlogController {
 
     // Admin endpoints
     @Get('admin/posts')
-    @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Roles('ADMIN', 'EDITOR', 'AUTHOR')
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('blog.read')
     async getAllPosts(
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
         @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
@@ -59,22 +59,23 @@ export class BlogController {
     }
 
     @Post('admin/posts')
-    @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Roles('ADMIN', 'EDITOR', 'AUTHOR')
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('blog.write')
     async createPost(@Body() dto: CreatePostDto, @CurrentUser('id') userId: string) {
         return this.blogService.createPost(userId, dto);
     }
 
+    @Patch('admin/posts/:id')
     @Put('admin/posts/:id')
-    @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Roles('ADMIN', 'EDITOR', 'AUTHOR')
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('blog.write')
     async updatePost(@Param('id') id: string, @Body() dto: UpdatePostDto) {
         return this.blogService.updatePost(id, dto);
     }
 
     @Delete('admin/posts/:id')
-    @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Roles('ADMIN', 'EDITOR')
+    @UseGuards(JwtAuthGuard, RbacGuard)
+    @Permissions('blog.delete')
     async deletePost(@Param('id') id: string) {
         return this.blogService.deletePost(id);
     }

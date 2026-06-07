@@ -17,9 +17,9 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
         title: "",
         slug: "",
         shortDescription: "",
-        description: "",
+        content: "",
         icon: "",
-        features: "",
+        benefits: "",
         sortOrder: 0,
         isActive: true,
     });
@@ -35,9 +35,9 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
                 title: data.title || "",
                 slug: data.slug || "",
                 shortDescription: data.shortDescription || "",
-                description: data.description || "",
+                content: data.content || "",
                 icon: data.icon || "",
-                features: Array.isArray(data.features) ? data.features.join("\n") : "",
+                benefits: Array.isArray(data.benefits) ? data.benefits.join("\n") : "",
                 sortOrder: data.sortOrder || 0,
                 isActive: data.isActive ?? true,
             });
@@ -63,7 +63,7 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
         try {
             const payload = {
                 ...formData,
-                features: formData.features.split("\n").filter(f => f.trim()),
+                benefits: formData.benefits.split("\n").map(f => f.trim()).filter(Boolean),
             };
             await api.put(`/api/v1/services/admin/${resolvedParams.id}`, payload);
             showToast("Service updated successfully!", "success");
@@ -137,11 +137,11 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-neutral-300 mb-1.5">Full Description</label>
-                                <textarea name="description" value={formData.description} onChange={handleChange} rows={8} className="w-full resize-y" />
+                                <textarea name="content" value={formData.content} onChange={handleChange} rows={8} className="w-full resize-y" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-neutral-300 mb-1.5">Features (one per line)</label>
-                                <textarea name="features" value={formData.features} onChange={handleChange} rows={6} className="w-full resize-y font-mono text-sm" />
+                                <textarea name="benefits" value={formData.benefits} onChange={handleChange} rows={6} className="w-full resize-y font-mono text-sm" />
                             </div>
                         </div>
                     </div>

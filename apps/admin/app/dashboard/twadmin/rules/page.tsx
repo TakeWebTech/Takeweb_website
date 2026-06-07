@@ -12,8 +12,26 @@ interface Rule {
     user?: { id: string; firstName: string; lastName: string } | null;
 }
 
-const MODULES = ["dashboard", "employees", "projects", "services", "blog", "careers", "contact", "media", "team", "settings", "seo", "reports", "reviews", "twadmin"];
-const ACCESS_TYPES = ["VIEW", "CREATE", "EDIT", "DELETE"];
+const MODULE_DEFINITIONS = [
+    { key: "dashboard", label: "Dashboard", actions: ["VIEW"] },
+    { key: "employees", label: "Employees", actions: ["VIEW", "CREATE", "EDIT", "DELETE", "APPROVE", "ASSIGN", "EXPORT"] },
+    { key: "salary", label: "Salary", actions: ["VIEW", "EDIT", "ASSIGN", "APPROVE", "EXPORT"] },
+    { key: "attendance", label: "Attendance", actions: ["VIEW", "EDIT", "APPROVE", "EXPORT"] },
+    { key: "reviews", label: "Reviews", actions: ["VIEW", "EDIT", "APPROVE", "EXPORT"] },
+    { key: "projects", label: "Projects", actions: ["VIEW", "CREATE", "EDIT", "DELETE"] },
+    { key: "services", label: "Services", actions: ["VIEW", "CREATE", "EDIT", "DELETE"] },
+    { key: "blog", label: "Blog", actions: ["VIEW", "CREATE", "EDIT", "DELETE"] },
+    { key: "careers", label: "Careers", actions: ["VIEW", "CREATE", "EDIT", "DELETE"] },
+    { key: "contact", label: "Contact", actions: ["VIEW", "EDIT", "EXPORT"] },
+    { key: "media", label: "Media", actions: ["VIEW", "CREATE", "EDIT", "DELETE"] },
+    { key: "team", label: "Teams", actions: ["VIEW", "CREATE", "EDIT", "DELETE"] },
+    { key: "settings", label: "Settings", actions: ["VIEW", "EDIT"] },
+    { key: "seo", label: "SEO", actions: ["VIEW", "EDIT", "EXPORT"] },
+    { key: "reports", label: "Reports", actions: ["VIEW", "EXPORT"] },
+    { key: "twadmin", label: "TWAdmin", actions: ["VIEW", "CREATE", "EDIT", "DELETE"] },
+];
+
+const ACCESS_TYPES = Array.from(new Set(MODULE_DEFINITIONS.flatMap(m => m.actions)));
 
 export default function RulesPage() {
     const [rules, setRules] = useState<Rule[]>([]);
@@ -22,15 +40,34 @@ export default function RulesPage() {
     const [editRule, setEditRule] = useState<Rule | null>(null);
     const [form, setForm] = useState({ name: "", description: "", level: "GROUP", groupId: "", teamId: "", userId: "", module: "dashboard", accessType: "VIEW", effect: "DENY", priority: 0 });
     const [saving, setSaving] = useState(false);
+    const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+    const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
+    const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
 
     const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
     const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem("accessToken")}`, "Content-Type": "application/json" });
 
-    useEffect(() => { fetchRules(); }, []);
+    useEffect(() => { fetchRules(); fetchScopeOptions(); }, []);
 
     const fetchRules = async () => {
         try { const res = await fetch(`${base}/api/v1/rules`, { headers: getHeaders() }); if (res.ok) setRules(await res.json()); }
         catch (err) { console.error(err); } finally { setLoading(false); }
+    };
+
+    const fetchScopeOptions = async () => {
+        try {
+            const [groupsRes, teamsRes, usersRes] = await Promise.all([
+                fetch(`${base}/api/v1/groups`, { headers: getHeaders() }),
+                fetch(`${base}/api/v1/teams`, { headers: getHeaders() }),
+                fetch(`${base}/api/v1/employees`, { headers: getHeaders() }),
+            ]);
+            if (groupsRes.ok) setGroups(await groupsRes.json());
+            if (teamsRes.ok) setTeams(await teamsRes.json());
+            if (usersRes.ok) {
+                const data = await usersRes.json();
+                setUsers(data.map((u: any) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` })));
+            }
+        } catch (err) { console.error(err); }
     };
 
     const saveRule = async () => {
@@ -158,9 +195,38 @@ export default function RulesPage() {
                                     </select></div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
+                                {form.level === "GROUP" && (
+                                    <div className="col-span-2">
+                                        <label className="block text-sm text-neutral-300 mb-1.5">Group</label>
+                                        <select value={form.groupId} onChange={e => setForm({ ...form, groupId: e.target.value, teamId: "", userId: "" })} className="w-full">
+                                            <option value="">Select group</option>
+                                            {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                                        </select>
+                                    </div>
+                                )}
+                                {form.level === "TEAM" && (
+                                    <div className="col-span-2">
+                                        <label className="block text-sm text-neutral-300 mb-1.5">Team</label>
+                                        <select value={form.teamId} onChange={e => setForm({ ...form, teamId: e.target.value, groupId: "", userId: "" })} className="w-full">
+                                            <option value="">Select team</option>
+                                            {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                        </select>
+                                    </div>
+                                )}
+                                {form.level === "INDIVIDUAL" && (
+                                    <div className="col-span-2">
+                                        <label className="block text-sm text-neutral-300 mb-1.5">User</label>
+                                        <select value={form.userId} onChange={e => setForm({ ...form, userId: e.target.value, groupId: "", teamId: "" })} className="w-full">
+                                            <option value="">Select user</option>
+                                            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div><label className="block text-sm text-neutral-300 mb-1.5">Module</label>
                                     <select value={form.module} onChange={e => setForm({ ...form, module: e.target.value })} className="w-full">
-                                        {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
+                                        {MODULE_DEFINITIONS.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
                                     </select></div>
                                 <div><label className="block text-sm text-neutral-300 mb-1.5">Access Type</label>
                                     <select value={form.accessType} onChange={e => setForm({ ...form, accessType: e.target.value })} className="w-full">
