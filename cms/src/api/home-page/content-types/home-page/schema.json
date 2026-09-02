@@ -1,0 +1,53 @@
+{
+  "kind": "singleType",
+  "collectionName": "home_pages",
+  "info": {
+    "singularName": "home-page",
+    "pluralName": "home-pages",
+    "displayName": "Home Page"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "hero": {
+      "type": "component",
+      "component": "home.hero-section"
+    },
+    "partnerSlider": {
+      "type": "component",
+      "component": "home.partner-slider-section"
+    },
+    "stats": {
+      "type": "component",
+      "repeatable": true,
+      "component": "home.stat-item"
+    },
+    "servicesHeading": {
+      "type": "component",
+      "component": "shared.section-heading"
+    },
+    "services": {
+      "type": "component",
+      "repeatable": true,
+      "component": "home.service-card"
+    },
+    "whyTakeWeb": {
+      "type": "component",
+      "component": "home.why-section"
+    },
+    "testimonialsHeading": {
+      "type": "component",
+      "component": "shared.section-heading"
+    },
+    "testimonials": {
+      "type": "component",
+      "repeatable": true,
+      "component": "home.testimonial-card"
+    },
+    "cta": {
+      "type": "component",
+      "component": "home.cta-section"
+    }
+  }
+}

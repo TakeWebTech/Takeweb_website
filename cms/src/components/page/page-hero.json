@@ -1,0 +1,34 @@
+{
+  "collectionName": "components_page_page_heroes",
+  "info": {
+    "displayName": "Page Hero"
+  },
+  "attributes": {
+    "overline": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "titleHighlight": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "primaryCta": {
+      "type": "component",
+      "component": "shared.link-button"
+    },
+    "secondaryCta": {
+      "type": "component",
+      "component": "shared.link-button"
+    }
+  }
+}

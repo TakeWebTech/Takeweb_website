@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_page_card_grid_sections",
+  "info": {
+    "displayName": "Card Grid Section"
+  },
+  "attributes": {
+    "heading": {
+      "type": "component",
+      "component": "shared.section-heading"
+    },
+    "background": {
+      "type": "enumeration",
+      "enum": ["default", "secondary"],
+      "default": "default"
+    },
+    "columns": {
+      "type": "integer",
+      "default": 3
+    },
+    "cards": {
+      "type": "component",
+      "repeatable": true,
+      "component": "page.icon-card"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_page_contact_methods",
+  "info": {
+    "displayName": "Contact Method"
+  },
+  "attributes": {
+    "icon": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "value": {
+      "type": "string",
+      "required": true
+    },
+    "href": {
+      "type": "string"
+    }
+  }
+}

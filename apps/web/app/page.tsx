@@ -1,183 +1,151 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FloatingElements } from "@/components/floating-elements";
-import { PartnerSlider } from "@/components/partner-slider";
 import { Card3D } from "@/components/ui/card-3d";
 import { SectionHeader } from "@/components/ui/section-header";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
-import { ScrollReveal, StaggerContainer, StaggerItem, FadeIn } from "@/components/ui/scroll-animations";
-import { ArrowRight, Code, Cloud, Shield, Cpu, Smartphone, BarChart3, Globe, Zap, Users, Award } from "lucide-react";
+import { StaggerContainer, StaggerItem, FadeIn } from "@/components/ui/scroll-animations";
+import { getHomePageContent } from "@/lib/strapi";
+import {
+    Activity,
+    ArrowRight,
+    Award,
+    BarChart3,
+    Box,
+    Circle,
+    Cloud,
+    Code,
+    Cpu,
+    Database,
+    Globe,
+    Globe2,
+    Hexagon,
+    Layers,
+    Server,
+    Shield,
+    Smartphone,
+    Triangle,
+    Users,
+    Zap,
+} from "lucide-react";
 
-const services = [
-    {
-        icon: Code,
-        title: "Enterprise Software",
-        description: "Custom solutions built with cutting-edge technologies for complex business challenges.",
-        href: "/services/enterprise-software",
-        gradient: "from-blue-500 to-cyan-500",
-    },
-    {
-        icon: Cloud,
-        title: "Cloud & DevOps",
-        description: "Seamless cloud migration, infrastructure automation, and continuous delivery.",
-        href: "/services/cloud-devops",
-        gradient: "from-violet-500 to-purple-500",
-    },
-    {
-        icon: Shield,
-        title: "Cybersecurity",
-        description: "Enterprise-grade security to protect your digital assets and ensure compliance.",
-        href: "/services/cybersecurity",
-        gradient: "from-rose-500 to-pink-500",
-    },
-    {
-        icon: Cpu,
-        title: "AI & Data Engineering",
-        description: "Intelligent automation and predictive analytics for data-driven decisions.",
-        href: "/services/ai-data",
-        gradient: "from-amber-500 to-orange-500",
-    },
-    {
-        icon: Smartphone,
-        title: "Web & Mobile Apps",
-        description: "Native and cross-platform apps delivering exceptional user experiences.",
-        href: "/services/web-mobile",
-        gradient: "from-emerald-500 to-teal-500",
-    },
-    {
-        icon: BarChart3,
-        title: "IT Consulting",
-        description: "Strategic guidance to modernize operations and accelerate digital transformation.",
-        href: "/services/it-consulting",
-        gradient: "from-indigo-500 to-blue-500",
-    },
-];
+const iconMap = {
+    activity: Activity,
+    award: Award,
+    box: Box,
+    chart: BarChart3,
+    circle: Circle,
+    cloud: Cloud,
+    code: Code,
+    cpu: Cpu,
+    database: Database,
+    globe: Globe,
+    globe2: Globe2,
+    hexagon: Hexagon,
+    layers: Layers,
+    server: Server,
+    shield: Shield,
+    smartphone: Smartphone,
+    triangle: Triangle,
+    users: Users,
+    zap: Zap,
+};
 
-const stats = [
-    { value: 500, suffix: "+", label: "Projects Delivered" },
-    { value: 99.9, suffix: "%", label: "Uptime SLA" },
-    { value: 150, suffix: "+", label: "Enterprise Clients" },
-    { value: 50, suffix: "+", label: "Countries Served" },
-];
+function getIcon(name?: string) {
+    return iconMap[(name || "code").toLowerCase() as keyof typeof iconMap] || Code;
+}
 
-const features = [
-    {
-        icon: Award,
-        title: "Enterprise-Grade Quality",
-        description: "Rigorous testing, security audits, and compliance certifications.",
-    },
-    {
-        icon: Zap,
-        title: "Rapid Delivery",
-        description: "Agile methodologies ensure on-time delivery without compromising quality.",
-    },
-    {
-        icon: Users,
-        title: "Expert Teams",
-        description: "Senior architects with deep expertise across industries and technologies.",
-    },
-    {
-        icon: Globe,
-        title: "Global Reach",
-        description: "Serving clients across continents with 24-hour development cycles.",
-    },
-];
+export default async function HomePage() {
+    const home = await getHomePageContent();
+    const hero = home.hero!;
+    const partnerSlider = home.partnerSlider!;
+    const whyTakeWeb = home.whyTakeWeb!;
+    const cta = home.cta!;
 
-const testimonials = [
-    {
-        quote: "TakeWeb transformed our legacy systems into a modern, scalable platform. Their team's expertise and dedication exceeded our expectations.",
-        author: "Sarah Chen",
-        role: "CTO, TechVentures Inc.",
-        avatar: "/founder.jpg",
-    },
-    {
-        quote: "The cloud migration was seamless. We reduced costs by 40% while improving performance. Highly recommend their services.",
-        author: "Michael Rodriguez",
-        role: "VP Engineering, DataFlow",
-        avatar: "/founder.jpg",
-    },
-    {
-        quote: "Their AI solutions helped us automate 70% of our manual processes. The ROI was visible within the first quarter.",
-        author: "Emily Watson",
-        role: "Director of Operations, InnovateCorp",
-        avatar: "/founder.jpg",
-    },
-];
-
-export default function HomePage() {
     return (
         <>
-            {/* Hero Section */}
             <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-                {/* Animated Gradient Background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-purple-500/5 animate-gradient" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(179,155,94,0.1),transparent_50%)] animate-pulse" style={{ animationDuration: '4s' }} />
-
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(179,155,94,0.1),transparent_50%)] animate-pulse" style={{ animationDuration: "4s" }} />
                 <FloatingElements />
-
                 <div className="container-main relative z-10 pt-24 pb-16">
                     <div className="max-w-4xl mx-auto text-center">
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-sm font-medium text-amber-500 mb-8 animate-fade-in">
-                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                            Trusted by 500+ enterprises worldwide
-                        </div>
-
-                        {/* Headline */}
+                        {hero.badgeText && (
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-sm font-medium text-amber-500 mb-8 animate-fade-in">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                                {hero.badgeText}
+                            </div>
+                        )}
                         <h1 className="text-[var(--text-primary)] mb-6 animate-slide-up">
-                            Next-Generation{" "}
-                            <span className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">Enterprise IT Solutions</span>
+                            {hero.title}{" "}
+                            {hero.titleHighlight && (
+                                <span className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
+                                    {hero.titleHighlight}
+                                </span>
+                            )}
                         </h1>
-
-                        {/* Subheadline */}
-                        <p className="text-lg sm:text-xl text-[var(--text-tertiary)] max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: '100ms' }}>
-                            We deliver world-class consulting, custom software, cloud solutions,
-                            and AI-powered innovations to enterprises and governments worldwide.
+                        <p className="text-lg sm:text-xl text-[var(--text-tertiary)] max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "100ms" }}>
+                            {hero.description}
                         </p>
-
-                        {/* CTAs */}
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
-                            <Link
-                                href="/contact"
-                                className="inline-flex items-center gap-2 px-8 py-4 text-white font-semibold bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-[0_0_40px_-10px_oklch(75%_0.15_85_/_0.5)] hover:-translate-y-1 transition-all group"
-                            >
-                                Get a Consultation
-                                <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
-                            </Link>
-                            <Link
-                                href="/services"
-                                className="inline-flex items-center gap-2 px-8 py-4 font-semibold text-[var(--text-primary)] border-2 border-[var(--border-secondary)] rounded-xl hover:border-amber-500 hover:text-amber-500 transition-all"
-                            >
-                                Explore Solutions
-                            </Link>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: "200ms" }}>
+                            {hero.primaryCta && (
+                                <Link href={hero.primaryCta.href} className="inline-flex items-center gap-2 px-8 py-4 text-white font-semibold bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-[0_0_40px_-10px_oklch(75%_0.15_85_/_0.5)] hover:-translate-y-1 transition-all group">
+                                    {hero.primaryCta.label}
+                                    <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
+                                </Link>
+                            )}
+                            {hero.secondaryCta && (
+                                <Link href={hero.secondaryCta.href} className="inline-flex items-center gap-2 px-8 py-4 font-semibold text-[var(--text-primary)] border-2 border-[var(--border-secondary)] rounded-xl hover:border-amber-500 hover:text-amber-500 transition-all">
+                                    {hero.secondaryCta.label}
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </div>
+                {hero.showScrollIndicator !== false && (
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+                        <div className="w-6 h-10 rounded-full border-2 border-[var(--text-muted)] flex items-start justify-center p-2">
+                            <div className="w-1 h-2 rounded-full bg-[var(--text-muted)] animate-pulse" />
+                        </div>
+                    </div>
+                )}
+            </section>
 
-                {/* Scroll Indicator */}
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-                    <div className="w-6 h-10 rounded-full border-2 border-[var(--text-muted)] flex items-start justify-center p-2">
-                        <div className="w-1 h-2 rounded-full bg-[var(--text-muted)] animate-pulse" />
+            <section className="py-12 border-y border-[var(--border-primary)] bg-[var(--bg-secondary)] overflow-hidden">
+                <div className="container-main mb-6">
+                    <p className="text-center text-sm text-[var(--text-muted)] uppercase tracking-wide font-medium">
+                        {partnerSlider.eyebrow}
+                    </p>
+                </div>
+                <div className="relative flex overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[var(--bg-secondary)] to-transparent z-10 pointer-events-none" />
+                    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[var(--bg-secondary)] to-transparent z-10 pointer-events-none" />
+                    <div className="flex items-center gap-16 animate-marquee" style={{ width: "max-content" }}>
+                        {[...(partnerSlider.tiles || []), ...(partnerSlider.tiles || [])].map((partner, index) => {
+                            const Icon = getIcon(partner.icon);
+                            return (
+                                <div key={`${partner.name}-${index}`} className="flex items-center justify-center h-12 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+                                    <div className="flex items-center gap-3 text-[var(--text-muted)] group">
+                                        <Icon size={30} className="text-[var(--text-secondary)] group-hover:text-amber-500 transition-colors" />
+                                        <span className="text-xl font-bold whitespace-nowrap tracking-tight">{partner.name}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
 
-            {/* Partner Slider */}
-            <PartnerSlider />
-
-            {/* Stats Section */}
             <section className="py-16 border-b border-[var(--border-primary)]">
                 <div className="container-main">
                     <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        {stats.map((stat, index) => (
+                        {home.stats?.map((stat, index) => (
                             <StaggerItem key={index}>
                                 <div className="text-center">
                                     <div className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mb-2">
                                         <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                                     </div>
-                                    <div className="text-sm text-[var(--text-tertiary)] font-medium">
-                                        {stat.label}
-                                    </div>
+                                    <div className="text-sm text-[var(--text-tertiary)] font-medium">{stat.label}</div>
                                 </div>
                             </StaggerItem>
                         ))}
@@ -185,130 +153,84 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* Services Section */}
             <section className="section-padding">
                 <div className="container-main">
                     <FadeIn>
-                        <SectionHeader
-                            overline="Our Services"
-                            title="Comprehensive IT Solutions"
-                            titleHighlight="for Modern Enterprises"
-                            description="From custom software development to cloud infrastructure and AI, we deliver end-to-end solutions that drive business growth."
-                        />
+                        <SectionHeader overline={home.servicesHeading?.overline} title={home.servicesHeading?.title || ""} titleHighlight={home.servicesHeading?.titleHighlight} description={home.servicesHeading?.description} />
                     </FadeIn>
-
                     <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {services.map((service, index) => (
-                            <StaggerItem key={index}>
-                                <Link href={service.href}>
-                                    <Card3D className="h-full group cursor-pointer">
-                                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${service.gradient} flex items-center justify-center mb-5`}>
-                                            <service.icon className="text-white" size={24} />
-                                        </div>
-                                        <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-3 group-hover:text-amber-500 transition-colors">
-                                            {service.title}
-                                        </h3>
-                                        <p className="text-[var(--text-tertiary)] mb-4">
-                                            {service.description}
-                                        </p>
-                                        <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 group-hover:gap-2 transition-all">
-                                            Learn more <ArrowRight size={14} />
-                                        </span>
-                                    </Card3D>
-                                </Link>
-                            </StaggerItem>
-                        ))}
+                        {home.services?.map((service, index) => {
+                            const Icon = getIcon(service.icon);
+                            return (
+                                <StaggerItem key={index}>
+                                    <Link href={service.href}>
+                                        <Card3D className="h-full group cursor-pointer">
+                                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${service.gradient} flex items-center justify-center mb-5`}>
+                                                <Icon className="text-white" size={24} />
+                                            </div>
+                                            <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-3 group-hover:text-amber-500 transition-colors">{service.title}</h3>
+                                            <p className="text-[var(--text-tertiary)] mb-4">{service.description}</p>
+                                            <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-500 group-hover:gap-2 transition-all">
+                                                Learn more <ArrowRight size={14} />
+                                            </span>
+                                        </Card3D>
+                                    </Link>
+                                </StaggerItem>
+                            );
+                        })}
                     </StaggerContainer>
                 </div>
             </section>
 
-            {/* Why TakeWeb Section */}
             <section className="section-padding bg-[var(--bg-secondary)]">
                 <div className="container-main">
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
-                        {/* Left - Content */}
                         <div>
-                            <span className="text-sm font-semibold uppercase tracking-widest text-amber-500 mb-4 block">
-                                Why TakeWeb
-                            </span>
+                            <span className="text-sm font-semibold uppercase tracking-widest text-amber-500 mb-4 block">{whyTakeWeb.overline}</span>
                             <h2 className="text-[var(--text-primary)] mb-6">
-                                Your Trusted Partner in{" "}
-                                <span className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">Digital Excellence</span>
+                                {whyTakeWeb.title}{" "}
+                                <span className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">{whyTakeWeb.titleHighlight}</span>
                             </h2>
-                            <p className="text-lg text-[var(--text-tertiary)] mb-10">
-                                We combine deep technical expertise with strategic business acumen
-                                to deliver solutions that drive real results.
-                            </p>
-
+                            <p className="text-lg text-[var(--text-tertiary)] mb-10">{whyTakeWeb.description}</p>
                             <StaggerContainer className="grid sm:grid-cols-2 gap-6">
-                                {features.map((feature, index) => (
-                                    <StaggerItem key={index}>
-                                        <div className="flex gap-4">
-                                            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                                                <feature.icon size={24} />
+                                {whyTakeWeb.features?.map((feature, index) => {
+                                    const Icon = getIcon(feature.icon);
+                                    return (
+                                        <StaggerItem key={index}>
+                                            <div className="flex gap-4">
+                                                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                                                    <Icon size={24} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold text-[var(--text-primary)] mb-1">{feature.title}</h4>
+                                                    <p className="text-sm text-[var(--text-tertiary)]">{feature.description}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h4 className="font-semibold text-[var(--text-primary)] mb-1">
-                                                    {feature.title}
-                                                </h4>
-                                                <p className="text-sm text-[var(--text-tertiary)]">
-                                                    {feature.description}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </StaggerItem>
-                                ))}
+                                        </StaggerItem>
+                                    );
+                                })}
                             </StaggerContainer>
                         </div>
-
-                        {/* Right - Visual */}
                         <div className="relative">
                             <div className="aspect-square rounded-3xl bg-[var(--bg-card)] border border-[var(--border-primary)] p-8 flex items-center justify-center overflow-hidden">
-                                {/* Concentric circles */}
                                 {[1, 2, 3, 4].map((i) => (
-                                    <div
-                                        key={i}
-                                        className="absolute border border-[var(--border-primary)] rounded-full animate-spin-slow"
-                                        style={{
-                                            width: `${i * 25}%`,
-                                            height: `${i * 25}%`,
-                                            animationDuration: `${20 + i * 5}s`,
-                                            animationDirection: i % 2 === 0 ? 'reverse' : 'normal',
-                                        }}
-                                    />
+                                    <div key={i} className="absolute border border-[var(--border-primary)] rounded-full animate-spin-slow" style={{ width: `${i * 25}%`, height: `${i * 25}%`, animationDuration: `${20 + i * 5}s`, animationDirection: i % 2 === 0 ? "reverse" : "normal" }} />
                                 ))}
-
-                                {/* Center logo */}
                                 <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center animate-float z-10">
-                                    <Image
-                                        src="/logo.png"
-                                        alt="TakeWeb"
-                                        width={48}
-                                        height={48}
-                                        className="object-contain"
-                                    />
+                                    <Image src="/logo.png" alt="TakeWeb" width={48} height={48} className="object-contain" />
                                 </div>
                             </div>
-
-                            {/* Glow effect */}
                             <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/10 to-amber-600/10 rounded-3xl blur-3xl -z-10" />
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Testimonials Section */}
             <section className="section-padding">
                 <div className="container-main">
-                    <SectionHeader
-                        overline="Testimonials"
-                        title="Trusted by Industry"
-                        titleHighlight="Leaders"
-                        description="See what our clients say about working with TakeWeb Enterprise."
-                    />
-
+                    <SectionHeader overline={home.testimonialsHeading?.overline} title={home.testimonialsHeading?.title || ""} titleHighlight={home.testimonialsHeading?.titleHighlight} description={home.testimonialsHeading?.description} />
                     <StaggerContainer className="grid md:grid-cols-3 gap-6">
-                        {testimonials.map((testimonial, index) => (
+                        {home.testimonials?.map((testimonial, index) => (
                             <StaggerItem key={index}>
                                 <Card3D className="h-full">
                                     <div className="flex flex-col h-full">
@@ -319,27 +241,14 @@ export default function HomePage() {
                                                 </svg>
                                             ))}
                                         </div>
-
-                                        <p className="text-[var(--text-secondary)] mb-6 flex-grow">
-                                            &ldquo;{testimonial.quote}&rdquo;
-                                        </p>
-
+                                        <p className="text-[var(--text-secondary)] mb-6 flex-grow">&ldquo;{testimonial.quote}&rdquo;</p>
                                         <div className="flex items-center gap-3 pt-4 border-t border-[var(--border-primary)]">
                                             <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[var(--bg-tertiary)]">
-                                                <Image
-                                                    src={testimonial.avatar}
-                                                    alt={testimonial.author}
-                                                    fill
-                                                    className="object-cover"
-                                                />
+                                                <Image src={(testimonial.avatar as string) || testimonial.avatarFallback || "/founder.jpg"} alt={testimonial.author} fill className="object-cover" />
                                             </div>
                                             <div>
-                                                <div className="font-semibold text-[var(--text-primary)] text-sm">
-                                                    {testimonial.author}
-                                                </div>
-                                                <div className="text-xs text-[var(--text-tertiary)]">
-                                                    {testimonial.role}
-                                                </div>
+                                                <div className="font-semibold text-[var(--text-primary)] text-sm">{testimonial.author}</div>
+                                                <div className="text-xs text-[var(--text-tertiary)]">{testimonial.role}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -350,38 +259,28 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* CTA Section */}
             <section className="section-padding">
                 <div className="container-main">
                     <div className="relative rounded-3xl bg-gradient-to-br from-amber-500 to-amber-700 p-12 md:p-16 text-center overflow-hidden">
-                        {/* Background decoration */}
                         <div className="absolute inset-0 opacity-20">
                             <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-white blur-3xl" />
                             <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-yellow-400 blur-3xl" />
                         </div>
-
                         <div className="relative z-10">
-                            <h2 className="text-white mb-4">
-                                Ready to Transform Your Business?
-                            </h2>
-                            <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
-                                Let&apos;s discuss how TakeWeb can help you achieve your digital transformation goals.
-                            </p>
-
+                            <h2 className="text-white mb-4">{cta.title}</h2>
+                            <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">{cta.description}</p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                <Link
-                                    href="/contact"
-                                    className="inline-flex items-center gap-2 px-8 py-4 bg-white text-amber-600 font-semibold rounded-xl hover:shadow-xl hover:-translate-y-1 transition-all group"
-                                >
-                                    Schedule a Call
-                                    <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
-                                </Link>
-                                <Link
-                                    href="/projects"
-                                    className="inline-flex items-center gap-2 px-8 py-4 bg-transparent border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-all"
-                                >
-                                    View Our Work
-                                </Link>
+                                {cta.primaryCta && (
+                                    <Link href={cta.primaryCta.href} className="inline-flex items-center gap-2 px-8 py-4 bg-white text-amber-600 font-semibold rounded-xl hover:shadow-xl hover:-translate-y-1 transition-all group">
+                                        {cta.primaryCta.label}
+                                        <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
+                                    </Link>
+                                )}
+                                {cta.secondaryCta && (
+                                    <Link href={cta.secondaryCta.href} className="inline-flex items-center gap-2 px-8 py-4 bg-transparent border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-all">
+                                        {cta.secondaryCta.label}
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { FloatingElements } from "@/components/floating-elements";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Card3D } from "@/components/ui/card-3d";
+import { getBlogPosts } from "@/lib/strapi";
 import { ArrowRight, Clock, User } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -26,21 +27,6 @@ interface BlogPost {
     isPublished: boolean;
 }
 
-async function getBlogPosts(): Promise<BlogPost[]> {
-    try {
-        const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/blog`,
-            { next: { revalidate: 1800 } } // Cache for 30 minutes
-        );
-        if (!res.ok) return [];
-        const data = await res.json();
-        return data.filter((post: BlogPost) => post.isPublished);
-    } catch (error) {
-        console.error('Failed to fetch blog posts:', error);
-        return [];
-    }
-}
-
 const categories = [
     "All",
     "Engineering",
@@ -51,7 +37,7 @@ const categories = [
 ];
 
 export default async function BlogPage() {
-    const allPosts = await getBlogPosts();
+    const allPosts = await getBlogPosts() as BlogPost[];
     const featuredPost = allPosts.find(post => post.isFeatured) || allPosts[0];
     const regularPosts = allPosts.filter(post => !post.isFeatured).slice(0, 6);
 

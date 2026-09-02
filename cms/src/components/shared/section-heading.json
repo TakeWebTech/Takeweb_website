@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_shared_section_headings",
+  "info": {
+    "displayName": "Section Heading"
+  },
+  "attributes": {
+    "overline": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "titleHighlight": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    }
+  }
+}

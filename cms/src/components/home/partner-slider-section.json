@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_home_partner_slider_sections",
+  "info": {
+    "displayName": "Partner Slider Section"
+  },
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "tiles": {
+      "type": "component",
+      "repeatable": true,
+      "component": "home.partner-tile"
+    }
+  }
+}

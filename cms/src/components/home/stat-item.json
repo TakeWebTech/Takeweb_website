@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_home_stat_items",
+  "info": {
+    "displayName": "Stat Item"
+  },
+  "attributes": {
+    "value": {
+      "type": "decimal",
+      "required": true
+    },
+    "suffix": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

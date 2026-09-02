@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_page_status_systems",
+  "info": {
+    "displayName": "Status System"
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["operational", "degraded", "outage", "maintenance"],
+      "default": "operational"
+    },
+    "uptime": {
+      "type": "string"
+    },
+    "latency": {
+      "type": "string"
+    }
+  }
+}

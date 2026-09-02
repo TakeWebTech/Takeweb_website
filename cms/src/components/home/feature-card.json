@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_home_feature_cards",
+  "info": {
+    "displayName": "Feature Card"
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "icon": {
+      "type": "string",
+      "default": "award"
+    }
+  }
+}

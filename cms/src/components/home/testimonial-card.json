@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_home_testimonial_cards",
+  "info": {
+    "displayName": "Testimonial Card"
+  },
+  "attributes": {
+    "quote": {
+      "type": "text",
+      "required": true
+    },
+    "author": {
+      "type": "string",
+      "required": true
+    },
+    "role": {
+      "type": "string"
+    },
+    "avatar": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "avatarFallback": {
+      "type": "string",
+      "default": "/founder.jpg"
+    }
+  }
+}

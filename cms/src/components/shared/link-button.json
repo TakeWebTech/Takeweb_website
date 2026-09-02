@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_shared_link_buttons",
+  "info": {
+    "displayName": "Link Button"
+  },
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "href": {
+      "type": "string",
+      "required": true
+    },
+    "variant": {
+      "type": "enumeration",
+      "enum": ["primary", "secondary"],
+      "default": "primary"
+    }
+  }
+}

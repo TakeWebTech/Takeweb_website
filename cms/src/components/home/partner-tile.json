@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_home_partner_tiles",
+  "info": {
+    "displayName": "Partner Tile"
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "icon": {
+      "type": "string",
+      "default": "cloud"
+    }
+  }
+}

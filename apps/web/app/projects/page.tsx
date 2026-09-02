@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FloatingElements } from "@/components/floating-elements";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Card3D } from "@/components/ui/card-3d";
+import { getProjects } from "@/lib/strapi";
 import { ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -28,23 +29,8 @@ interface Project {
     isActive: boolean;
 }
 
-async function getProjects(): Promise<Project[]> {
-    try {
-        const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/projects`,
-            { next: { revalidate: 3600 } } // Cache for 1 hour
-        );
-        if (!res.ok) return [];
-        const data = await res.json();
-        return data.filter((p: Project) => p.isActive);
-    } catch (error) {
-        console.error('Failed to fetch projects:', error);
-        return [];
-    }
-}
-
 export default async function ProjectsPage() {
-    const projects = await getProjects();
+    const projects = await getProjects() as Project[];
 
     return (
         <>

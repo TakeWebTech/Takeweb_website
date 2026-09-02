@@ -21,6 +21,11 @@ const nextConfig = {
                 hostname: '**.railway.app',
                 pathname: '/**',
             },
+            {
+                protocol: 'http',
+                hostname: 'localhost',
+                pathname: '/uploads/**',
+            },
         ],
     },
 
@@ -35,6 +40,7 @@ const nextConfig = {
     // Environment variables available at build time
     env: {
         NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002',
+        NEXT_PUBLIC_STRAPI_URL: process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337',
     },
 
     // API rewrites for development (proxies /api/* to backend)

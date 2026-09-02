@@ -5,141 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, ChevronDown, ChevronRight, ArrowRight } from "lucide-react";
 import { ThemeToggle } from "./theme-provider";
+import type { GlobalContent, GlobalMenu } from "@/lib/strapi";
 
-// Mega Menu Structure
-const megaMenuData = {
-    products: {
-        title: "Products",
-        sections: [
-            {
-                title: "Platforms",
-                items: [
-                    { name: "TakeWeb Cloud Platform", desc: "Enterprise-grade cloud management & automation", href: "/products/cloud-platform" },
-                    { name: "TakeWeb AI Suite", desc: "AI, analytics & intelligent automation", href: "/products/ai-suite" },
-                    { name: "TakeWeb Secure", desc: "Security, compliance & threat protection", href: "/products/secure" },
-                ],
-            },
-            {
-                title: "Developer Tools",
-                items: [
-                    { name: "TakeWeb APIs", desc: "RESTful & GraphQL APIs", href: "/products/apis" },
-                    { name: "DevOps Toolkit", desc: "CI/CD & automation tools", href: "/products/devops-toolkit" },
-                    { name: "Monitoring & Observability", desc: "Real-time insights", href: "/products/monitoring" },
-                ],
-            },
-        ],
-        featured: { name: "TakeWeb AI Suite", desc: "Transform your enterprise with AI", href: "/products/ai-suite" },
-    },
-    solutions: {
-        title: "Solutions",
-        sections: [
-            {
-                title: "By Business",
-                items: [
-                    { name: "Startups", href: "/solutions/startups" },
-                    { name: "Growing Companies", href: "/solutions/growing-companies" },
-                    { name: "Enterprises", href: "/solutions/enterprise" },
-                ],
-            },
-            {
-                title: "By Need",
-                items: [
-                    { name: "Digital Transformation", href: "/solutions/digital-transformation" },
-                    { name: "Cloud Migration", href: "/solutions/cloud-migration" },
-                    { name: "AI Adoption", href: "/solutions/ai-adoption" },
-                    { name: "Security & Compliance", href: "/solutions/security-compliance" },
-                ],
-            },
-        ],
-        featured: { name: "Enterprise Transformation", desc: "End-to-end digital transformation", href: "/solutions/enterprise" },
-    },
-    services: {
-        title: "Services",
-        sections: [
-            {
-                title: "Engineering",
-                items: [
-                    { name: "Custom Software Development", href: "/services/enterprise-software" },
-                    { name: "Web & Mobile Applications", href: "/services/web-mobile" },
-                ],
-            },
-            {
-                title: "Cloud & DevOps",
-                items: [
-                    { name: "Cloud Architecture", href: "/services/cloud-devops" },
-                    { name: "DevOps & Automation", href: "/services/cloud-devops" },
-                ],
-            },
-            {
-                title: "Data & AI",
-                items: [
-                    { name: "AI / ML Development", href: "/services/ai-data" },
-                    { name: "Data Engineering", href: "/services/ai-data" },
-                ],
-            },
-            {
-                title: "Security",
-                items: [
-                    { name: "Cybersecurity", href: "/services/cybersecurity" },
-                    { name: "Compliance & Audits", href: "/services/cybersecurity" },
-                ],
-            },
-            {
-                title: "Consulting",
-                items: [
-                    { name: "IT Consulting", href: "/services/it-consulting" },
-                    { name: "Technology Strategy", href: "/services/it-consulting" },
-                ],
-            },
-        ],
-    },
-    industries: {
-        title: "Industries",
-        items: [
-            { name: "SaaS & Technology", href: "/industries/saas" },
-            { name: "FinTech & Banking", href: "/industries/fintech" },
-            { name: "Healthcare", href: "/industries/healthcare" },
-            { name: "Education", href: "/industries/education" },
-            { name: "E-commerce", href: "/industries/ecommerce" },
-            { name: "Enterprise & Corporates", href: "/industries/enterprise" },
-        ],
-    },
-    resources: {
-        title: "Resources",
-        sections: [
-            {
-                title: "Insights",
-                items: [
-                    { name: "Blog", href: "/blog" },
-                    { name: "Articles", href: "/blog" },
-                ],
-            },
-            {
-                title: "Learn",
-                items: [
-                    { name: "Case Studies", href: "/projects" },
-                    { name: "Whitepapers", href: "/resources/whitepapers" },
-                    { name: "Service Status", href: "/status" },
-                    { name: "News & Updates", href: "/blog" },
-                ],
-            },
-        ],
-        featured: { name: "Latest Insights", desc: "The Future of Enterprise AI", href: "/blog" },
-    },
-    company: {
-        title: "Company",
-        items: [
-            { name: "About TakeWeb", href: "/about" },
-            { name: "Mission & Vision", href: "/about#mission" },
-            { name: "Leadership", href: "/about#leadership" },
-            { name: "Security & Compliance", href: "/security" },
-            { name: "Partnerships", href: "/partnerships" },
-            { name: "Careers", href: "/careers" },
-        ],
-    },
-};
-
-export function Navigation() {
+export function Navigation({ global }: { global: GlobalContent }) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -160,6 +28,10 @@ export function Navigation() {
     const handleMenuLeave = () => {
         setActiveMenu(null);
     };
+    const megaMenuData = global.navigation || {};
+    const logo = typeof global.logo === "string" && global.logo ? global.logo : "/logo.png";
+    const ctaLabel = global.primaryCtaLabel || "Get Consultation";
+    const ctaHref = global.primaryCtaHref || "/contact";
 
     return (
         <header
@@ -174,15 +46,15 @@ export function Navigation() {
                     <Link href="/" className="flex items-center gap-3 group">
                         <div className="relative w-10 h-10 overflow-hidden rounded-xl">
                             <Image
-                                src="/logo.png"
-                                alt="TakeWeb"
+                                src={logo}
+                                alt={global.siteName}
                                 fill
                                 className="object-contain"
                                 priority
                             />
                         </div>
                         <span className="text-xl font-bold bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
-                            TakeWeb
+                            {global.siteName}
                         </span>
                     </Link>
 
@@ -194,7 +66,7 @@ export function Navigation() {
                             onMouseEnter={() => handleMenuEnter("products")}
                         >
                             <button className="flex items-center gap-1 px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium text-sm">
-                                Products
+                                {megaMenuData.products?.title || "Products"}
                                 <ChevronDown size={14} className={`transition-transform duration-200 ${activeMenu === "products" ? "rotate-180" : ""}`} />
                             </button>
 
@@ -209,7 +81,7 @@ export function Navigation() {
                             onMouseEnter={() => handleMenuEnter("solutions")}
                         >
                             <button className="flex items-center gap-1 px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium text-sm">
-                                Solutions
+                                {megaMenuData.solutions?.title || "Solutions"}
                                 <ChevronDown size={14} className={`transition-transform duration-200 ${activeMenu === "solutions" ? "rotate-180" : ""}`} />
                             </button>
 
@@ -224,7 +96,7 @@ export function Navigation() {
                             onMouseEnter={() => handleMenuEnter("services")}
                         >
                             <button className="flex items-center gap-1 px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium text-sm">
-                                Services
+                                {megaMenuData.services?.title || "Services"}
                                 <ChevronDown size={14} className={`transition-transform duration-200 ${activeMenu === "services" ? "rotate-180" : ""}`} />
                             </button>
 
@@ -239,12 +111,12 @@ export function Navigation() {
                             onMouseEnter={() => handleMenuEnter("industries")}
                         >
                             <button className="flex items-center gap-1 px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium text-sm">
-                                Industries
+                                {megaMenuData.industries?.title || "Industries"}
                                 <ChevronDown size={14} className={`transition-transform duration-200 ${activeMenu === "industries" ? "rotate-180" : ""}`} />
                             </button>
 
                             {activeMenu === "industries" && (
-                                <SimpleDropdown items={megaMenuData.industries.items} onClose={() => setActiveMenu(null)} />
+                                <SimpleDropdown items={megaMenuData.industries?.items || []} onClose={() => setActiveMenu(null)} />
                             )}
                         </div>
 
@@ -254,7 +126,7 @@ export function Navigation() {
                             onMouseEnter={() => handleMenuEnter("resources")}
                         >
                             <button className="flex items-center gap-1 px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium text-sm">
-                                Resources
+                                {megaMenuData.resources?.title || "Resources"}
                                 <ChevronDown size={14} className={`transition-transform duration-200 ${activeMenu === "resources" ? "rotate-180" : ""}`} />
                             </button>
 
@@ -269,18 +141,18 @@ export function Navigation() {
                             onMouseEnter={() => handleMenuEnter("company")}
                         >
                             <button className="flex items-center gap-1 px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium text-sm">
-                                Company
+                                {megaMenuData.company?.title || "Company"}
                                 <ChevronDown size={14} className={`transition-transform duration-200 ${activeMenu === "company" ? "rotate-180" : ""}`} />
                             </button>
 
                             {activeMenu === "company" && (
-                                <SimpleDropdown items={megaMenuData.company.items} onClose={() => setActiveMenu(null)} />
+                                <SimpleDropdown items={megaMenuData.company?.items || []} onClose={() => setActiveMenu(null)} />
                             )}
                         </div>
 
                         {/* Contact */}
                         <Link
-                            href="/contact"
+                            href={ctaHref}
                             className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium text-sm"
                         >
                             Contact
@@ -295,7 +167,7 @@ export function Navigation() {
                             href="/contact"
                             className="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-[0_0_30px_-8px_oklch(75%_0.15_85_/_0.5)] hover:-translate-y-0.5 transition-all"
                         >
-                            Get Consultation
+                            {ctaLabel}
                         </Link>
 
                         {/* Mobile Menu Button */}
@@ -367,11 +239,11 @@ export function Navigation() {
                             </Link>
 
                             <Link
-                                href="/contact"
+                                href={ctaHref}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className="mx-4 mt-4 px-5 py-3 text-center font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl"
                             >
-                                Get Consultation
+                                {ctaLabel}
                             </Link>
                         </div>
                     </div>
@@ -383,13 +255,11 @@ export function Navigation() {
 
 // Mega Menu Component
 function MegaMenu({ data, onClose }: {
-    data: {
-        title: string;
-        sections?: { title: string; items: { name: string; href: string; desc?: string }[] }[];
-        featured?: { name: string; desc: string; href: string };
-    };
+    data?: GlobalMenu;
     onClose: () => void
 }) {
+    if (!data) return null;
+
     return (
         <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[700px] animate-fade-in">
             <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl overflow-hidden">
@@ -454,7 +324,9 @@ function MegaMenu({ data, onClose }: {
 }
 
 // Services Mega Menu (5 columns)
-function MegaMenuServices({ data, onClose }: { data: typeof megaMenuData.services; onClose: () => void }) {
+function MegaMenuServices({ data, onClose }: { data?: GlobalMenu; onClose: () => void }) {
+    if (!data) return null;
+
     return (
         <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 w-[900px] animate-fade-in">
             <div className="bg-[var(--bg-card)] backdrop-blur-xl border border-[var(--border-primary)] rounded-2xl shadow-2xl p-6">

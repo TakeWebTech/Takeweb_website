@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_home_why_sections",
+  "info": {
+    "displayName": "Why TakeWeb Section"
+  },
+  "attributes": {
+    "overline": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "titleHighlight": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "features": {
+      "type": "component",
+      "repeatable": true,
+      "component": "home.feature-card"
+    }
+  }
+}

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16-alpine
@@ -35,6 +33,57 @@ services:
     volumes:
       - takeweb_pgadmin_data:/var/lib/pgadmin
 
+  cms-db:
+    image: postgres:16-alpine
+    container_name: takeweb-cms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: strapi
+      POSTGRES_DB: takeweb_cms
+    ports:
+      - "5434:5432"
+    volumes:
+      - takeweb_cms_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strapi -d takeweb_cms"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  cms:
+    build:
+      context: ./cms
+    container_name: takeweb-strapi
+    restart: unless-stopped
+    depends_on:
+      cms-db:
+        condition: service_healthy
+    environment:
+      HOST: 0.0.0.0
+      PORT: 1337
+      PUBLIC_URL: http://localhost:1337
+      NODE_ENV: development
+      APP_KEYS: takeweb-local-key-1,takeweb-local-key-2,takeweb-local-key-3,takeweb-local-key-4
+      API_TOKEN_SALT: takeweb-local-api-token-salt
+      ADMIN_JWT_SECRET: takeweb-local-admin-jwt-secret
+      TRANSFER_TOKEN_SALT: takeweb-local-transfer-token-salt
+      JWT_SECRET: takeweb-local-jwt-secret
+      ENCRYPTION_KEY: takeweb-local-32-character-key
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: cms-db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: takeweb_cms
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: strapi
+      DATABASE_SSL: "false"
+    ports:
+      - "1337:1337"
+      - "5173:5173"
+    volumes:
+      - ./cms/public/uploads:/opt/app/public/uploads
+
 volumes:
   takeweb_pgdata:
   takeweb_pgadmin_data:
+  takeweb_cms_pgdata:

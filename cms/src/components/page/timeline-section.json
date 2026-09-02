@@ -1,0 +1,17 @@
+{
+  "collectionName": "components_page_timeline_sections",
+  "info": {
+    "displayName": "Timeline Section"
+  },
+  "attributes": {
+    "heading": {
+      "type": "component",
+      "component": "shared.section-heading"
+    },
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "page.timeline-item"
+    }
+  }
+}

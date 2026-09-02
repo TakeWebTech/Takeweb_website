@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { Card3D } from "@/components/ui/card-3d";
 import { SectionHeader } from "@/components/ui/section-header";
 import { FloatingElements } from "@/components/floating-elements";
+import { getServices } from "@/lib/strapi";
 import { ArrowRight, Code, Cloud, Shield, Cpu, Smartphone, BarChart3, Check } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -30,21 +31,6 @@ interface Service {
     features: string[];
     sortOrder: number;
     isActive: boolean;
-}
-
-async function getServices(): Promise<Service[]> {
-    try {
-        const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/services`,
-            { next: { revalidate: 3600 } }
-        );
-        if (!res.ok) return [];
-        const data = await res.json();
-        return data.filter((s: Service) => s.isActive).sort((a: Service, b: Service) => a.sortOrder - b.sortOrder);
-    } catch (error) {
-        console.error('Failed to fetch services:', error);
-        return [];
-    }
 }
 
 const workflowSteps = [
@@ -85,7 +71,7 @@ const gradients = [
 ];
 
 export default async function ServicesPage() {
-    const services = await getServices();
+    const services = await getServices() as Service[];
 
     return (
         <>

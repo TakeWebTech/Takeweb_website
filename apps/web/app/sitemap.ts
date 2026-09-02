@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { getBlogPosts, getProjects, getServices } from '@/lib/strapi';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://takeweb.in';
@@ -55,62 +56,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
     ];
 
-    // Service pages
-    const servicePages: MetadataRoute.Sitemap = [
-        '/services/it-consulting',
-        '/services/software-development',
-        '/services/cloud-devops',
-        '/services/ai-data-analytics',
-        '/services/cybersecurity',
-        '/services/enterprise-solutions',
-    ].map((route) => ({
-        url: `${baseUrl}${route}`,
+    const servicePages: MetadataRoute.Sitemap = (await getServices()).map((service) => ({
+        url: `${baseUrl}/services/${service.slug}`,
         lastModified: new Date(),
         changeFrequency: 'monthly' as const,
         priority: 0.85,
     }));
 
-    // Fetch dynamic blog posts
-    let blogPosts: MetadataRoute.Sitemap = [];
-    try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        const response = await fetch(`${apiUrl}/api/v1/blog`, {
-            next: { revalidate: 3600 }, // Cache for 1 hour
-        });
+    const blogPosts: MetadataRoute.Sitemap = (await getBlogPosts()).map((post) => ({
+        url: `${baseUrl}/blog/${post.slug}`,
+        lastModified: post.publishedAt ? new Date(post.publishedAt) : new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.7,
+    }));
 
-        if (response.ok) {
-            const posts = await response.json();
-            blogPosts = posts.map((post: any) => ({
-                url: `${baseUrl}/blog/${post.slug}`,
-                lastModified: new Date(post.updatedAt || post.createdAt),
-                changeFrequency: 'monthly' as const,
-                priority: 0.7,
-            }));
-        }
-    } catch (error) {
-        console.log('Sitemap: Could not fetch blog posts:', error);
-    }
-
-    // Fetch dynamic projects
-    let projects: MetadataRoute.Sitemap = [];
-    try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        const response = await fetch(`${apiUrl}/api/v1/projects`, {
-            next: { revalidate: 3600 }, // Cache for 1 hour
-        });
-
-        if (response.ok) {
-            const projectsList = await response.json();
-            projects = projectsList.map((project: any) => ({
-                url: `${baseUrl}/projects/${project.slug}`,
-                lastModified: new Date(project.updatedAt || project.createdAt),
-                changeFrequency: 'monthly' as const,
-                priority: 0.75,
-            }));
-        }
-    } catch (error) {
-        console.log('Sitemap: Could not fetch projects:', error);
-    }
+    const projects: MetadataRoute.Sitemap = (await getProjects()).map((project) => ({
+        url: `${baseUrl}/projects/${project.slug}`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly' as const,
+        priority: 0.75,
+    }));
 
     // Combine all entries
     return [...staticPages, ...servicePages, ...blogPosts, ...projects];

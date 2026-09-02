@@ -1,0 +1,17 @@
+{
+  "collectionName": "components_page_legal_content_sections",
+  "info": {
+    "displayName": "Legal Content Section"
+  },
+  "attributes": {
+    "sections": {
+      "type": "component",
+      "repeatable": true,
+      "component": "page.legal-section"
+    },
+    "cta": {
+      "type": "component",
+      "component": "shared.link-button"
+    }
+  }
+}

@@ -6,6 +6,7 @@ import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { Preloader } from "@/components/ui/preloader";
 import { PageTransition } from "@/components/ui/page-transition";
+import { getGlobalContent } from "@/lib/strapi";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -82,11 +83,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const global = await getGlobalContent();
+
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
@@ -116,11 +119,11 @@ export default function RootLayout({
       >
         <Preloader />
         <ThemeProvider>
-          <Navigation />
+          <Navigation global={global} />
           <PageTransition>
             <main>{children}</main>
           </PageTransition>
-          <Footer />
+          <Footer global={global} />
         </ThemeProvider>
       </body>
     </html>

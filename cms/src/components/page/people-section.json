@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_page_people_sections",
+  "info": {
+    "displayName": "People Section"
+  },
+  "attributes": {
+    "heading": {
+      "type": "component",
+      "component": "shared.section-heading"
+    },
+    "background": {
+      "type": "enumeration",
+      "enum": ["default", "secondary"],
+      "default": "secondary"
+    },
+    "people": {
+      "type": "component",
+      "repeatable": true,
+      "component": "page.person-card"
+    }
+  }
+}

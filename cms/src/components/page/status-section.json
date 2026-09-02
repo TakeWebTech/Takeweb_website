@@ -1,0 +1,37 @@
+{
+  "collectionName": "components_page_status_sections",
+  "info": {
+    "displayName": "Status Section"
+  },
+  "attributes": {
+    "overallStatus": {
+      "type": "string",
+      "default": "All Systems Operational"
+    },
+    "verifiedText": {
+      "type": "string"
+    },
+    "uptimeLabel": {
+      "type": "string"
+    },
+    "uptimeValue": {
+      "type": "string"
+    },
+    "latencyLabel": {
+      "type": "string"
+    },
+    "latencyValue": {
+      "type": "string"
+    },
+    "systems": {
+      "type": "component",
+      "repeatable": true,
+      "component": "page.status-system"
+    },
+    "incidents": {
+      "type": "component",
+      "repeatable": true,
+      "component": "page.status-incident"
+    }
+  }
+}

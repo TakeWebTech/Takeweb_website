@@ -1,0 +1,33 @@
+{
+  "collectionName": "components_home_hero_sections",
+  "info": {
+    "displayName": "Home Hero Section"
+  },
+  "attributes": {
+    "badgeText": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "titleHighlight": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "primaryCta": {
+      "type": "component",
+      "component": "shared.link-button"
+    },
+    "secondaryCta": {
+      "type": "component",
+      "component": "shared.link-button"
+    },
+    "showScrollIndicator": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

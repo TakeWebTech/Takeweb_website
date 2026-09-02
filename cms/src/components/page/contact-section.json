@@ -1,0 +1,39 @@
+{
+  "collectionName": "components_page_contact_sections",
+  "info": {
+    "displayName": "Contact Section"
+  },
+  "attributes": {
+    "formTitle": {
+      "type": "string",
+      "default": "Send Us a Message"
+    },
+    "infoTitle": {
+      "type": "string",
+      "default": "Get in Touch"
+    },
+    "infoDescription": {
+      "type": "text"
+    },
+    "methods": {
+      "type": "component",
+      "repeatable": true,
+      "component": "page.contact-method"
+    },
+    "scheduleTitle": {
+      "type": "string"
+    },
+    "scheduleDescription": {
+      "type": "text"
+    },
+    "scheduleCta": {
+      "type": "component",
+      "component": "shared.link-button"
+    },
+    "trustItems": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.text-item"
+    }
+  }
+}

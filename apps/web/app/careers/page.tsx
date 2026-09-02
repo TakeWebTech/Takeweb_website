@@ -69,10 +69,16 @@ export default function CareersPage() {
     useEffect(() => {
         const fetchJobs = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/careers`);
+                const strapiUrl = (process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337").replace(/\/$/, "");
+                const res = await fetch(`${strapiUrl}/api/jobs?sort=title:asc`);
                 if (res.ok) {
-                    const data = await res.json();
-                    setJobs(data.filter((job: Job) => job.isActive));
+                    const json = await res.json();
+                    const rows = Array.isArray(json.data) ? json.data : [];
+                    const data = rows.map((row: Job & { attributes?: Job }) => {
+                        const { attributes, ...rest } = row;
+                        return { ...rest, ...(attributes || {}) };
+                    });
+                    setJobs(data.filter((job: Job) => job.isActive !== false));
                 } else {
                     throw new Error("API not available");
                 }
