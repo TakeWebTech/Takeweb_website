@@ -34,30 +34,40 @@ function getTextList(value: TextListValue) {
 }
 
 async function strapiSingle<T>(path: string, revalidate = 1800): Promise<T | null> {
-    const token = process.env.STRAPI_API_TOKEN;
-    const res = await fetch(`${STRAPI_URL}/api/${path.replace(/^\//, "")}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        next: { revalidate },
-    });
+    try {
+        const token = process.env.STRAPI_API_TOKEN;
+        const res = await fetch(`${STRAPI_URL}/api/${path.replace(/^\//, "")}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            next: { revalidate },
+            signal: AbortSignal.timeout(10000),
+        });
 
-    if (!res.ok) return null;
+        if (!res.ok) return null;
 
-    const json = await res.json();
-    return json.data ? getAttributes(json.data) as T : null;
+        const json = await res.json();
+        return json.data ? getAttributes(json.data) as T : null;
+    } catch {
+        return null;
+    }
 }
 
 async function strapiFetch<T>(path: string, revalidate = 1800): Promise<T[]> {
-    const token = process.env.STRAPI_API_TOKEN;
-    const res = await fetch(`${STRAPI_URL}/api/${path.replace(/^\//, "")}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        next: { revalidate },
-    });
+    try {
+        const token = process.env.STRAPI_API_TOKEN;
+        const res = await fetch(`${STRAPI_URL}/api/${path.replace(/^\//, "")}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            next: { revalidate },
+            signal: AbortSignal.timeout(10000),
+        });
 
-    if (!res.ok) return [];
+        if (!res.ok) return [];
 
-    const json = await res.json();
-    const rows = Array.isArray(json.data) ? json.data : [];
-    return rows.map(getAttributes) as T[];
+        const json = await res.json();
+        const rows = Array.isArray(json.data) ? json.data : [];
+        return rows.map(getAttributes) as T[];
+    } catch {
+        return [];
+    }
 }
 
 export interface SiteService {
