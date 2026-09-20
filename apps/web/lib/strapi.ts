@@ -75,6 +75,87 @@ export interface SiteService {
     isActive?: boolean;
 }
 
+export const defaultServices: SiteService[] = [
+    {
+        id: "enterprise-software",
+        title: "Enterprise Software",
+        slug: "enterprise-software",
+        shortDescription: "Custom solutions built with cutting-edge technologies for complex business challenges.",
+        description: "Custom enterprise platforms, workflow systems, integrations, and modernization programs built for scale.",
+        icon: "code",
+        gradient: "from-blue-500 to-cyan-500",
+        features: ["Custom application development", "Legacy modernization", "API integrations", "Enterprise architecture"],
+        technologies: ["Next.js", "Node.js", "PostgreSQL", "AWS"],
+        sortOrder: 1,
+        isActive: true,
+    },
+    {
+        id: "cloud-devops",
+        title: "Cloud & DevOps",
+        slug: "cloud-devops",
+        shortDescription: "Seamless cloud migration, infrastructure automation, and continuous delivery.",
+        description: "Cloud architecture, migration, infrastructure automation, CI/CD, observability, and managed DevOps.",
+        icon: "cloud",
+        gradient: "from-violet-500 to-purple-500",
+        features: ["Cloud migration", "Infrastructure as code", "CI/CD pipelines", "Monitoring and observability"],
+        technologies: ["AWS", "Azure", "Kubernetes", "Terraform"],
+        sortOrder: 2,
+        isActive: true,
+    },
+    {
+        id: "cybersecurity",
+        title: "Cybersecurity",
+        slug: "cybersecurity",
+        shortDescription: "Enterprise-grade security to protect your digital assets and ensure compliance.",
+        description: "Security assessments, compliance programs, secure architecture, and threat protection for modern businesses.",
+        icon: "shield",
+        gradient: "from-rose-500 to-pink-500",
+        features: ["Security audits", "Compliance readiness", "Application security", "Threat monitoring"],
+        technologies: ["SIEM", "Zero Trust", "OWASP", "Cloud Security"],
+        sortOrder: 3,
+        isActive: true,
+    },
+    {
+        id: "ai-data",
+        title: "AI & Data Engineering",
+        slug: "ai-data",
+        shortDescription: "Intelligent automation and predictive analytics for data-driven decisions.",
+        description: "Data pipelines, analytics platforms, AI-powered automation, and machine learning systems.",
+        icon: "cpu",
+        gradient: "from-amber-500 to-orange-500",
+        features: ["Data engineering", "AI automation", "Dashboards", "Machine learning platforms"],
+        technologies: ["Python", "OpenAI", "BigQuery", "dbt"],
+        sortOrder: 4,
+        isActive: true,
+    },
+    {
+        id: "web-mobile",
+        title: "Web & Mobile Apps",
+        slug: "web-mobile",
+        shortDescription: "Native and cross-platform apps delivering exceptional user experiences.",
+        description: "Responsive web apps, mobile apps, portals, and product experiences for customers and teams.",
+        icon: "smartphone",
+        gradient: "from-emerald-500 to-teal-500",
+        features: ["Web applications", "Mobile apps", "Design systems", "Performance optimization"],
+        technologies: ["React", "Next.js", "React Native", "Flutter"],
+        sortOrder: 5,
+        isActive: true,
+    },
+    {
+        id: "it-consulting",
+        title: "IT Consulting",
+        slug: "it-consulting",
+        shortDescription: "Strategic guidance to modernize operations and accelerate digital transformation.",
+        description: "Technology strategy, roadmap planning, architecture reviews, and transformation consulting.",
+        icon: "chart",
+        gradient: "from-indigo-500 to-blue-500",
+        features: ["Technology strategy", "Architecture review", "Roadmaps", "Vendor selection"],
+        technologies: ["Cloud", "Security", "Data", "Enterprise Architecture"],
+        sortOrder: 6,
+        isActive: true,
+    },
+];
+
 export interface SiteBlogPost {
     id: string | number;
     slug: string;
@@ -463,7 +544,8 @@ export async function getSitePage(slug: string) {
 
 export async function getServices() {
     const services = await strapiFetch<SiteService>("services?sort=sortOrder:asc&populate=*", 3600);
-    return services
+    const rows = services.length ? services : defaultServices;
+    return rows
         .filter((service) => service.isActive !== false)
         .map((service) => ({
             ...service,
@@ -471,6 +553,17 @@ export async function getServices() {
             benefits: getTextList(service.benefits),
             technologies: getTextList(service.technologies),
         }));
+}
+
+export async function getServiceBySlug(slug: string) {
+    const aliasMap: Record<string, string> = {
+        "software-development": "enterprise-software",
+        "enterprise-solutions": "enterprise-software",
+        "ai-data-analytics": "ai-data",
+    };
+    const normalizedSlug = aliasMap[slug] || slug;
+    const services = await getServices();
+    return services.find((service) => service.slug === normalizedSlug) || null;
 }
 
 export async function getBlogPosts() {

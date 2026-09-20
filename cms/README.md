@@ -26,12 +26,15 @@ The CMS already includes these collection types:
 
 - Global
 - Home Page
+- Site Page
 - Service
 - Blog Post
 - Project
 - Job
 
 Home Page is a single type with proper component fields for Hero, moving tiles, stats, services, Why TakeWeb, testimonials, and CTA. Draft/publish is disabled for the first content types; use `isActive` and `isPublished` to control visibility.
+
+Site Page is a collection type for About, Contact, Partnerships, Security, Privacy, Terms, Status, and Coming Soon. It uses dynamic-zone components instead of JSON fields.
 
 They are stored in `src/api/*/content-types/*/schema.json` and `src/components`, which is the normal Strapi project format.
 
@@ -55,4 +58,12 @@ After Strapi is running and you create an API token with create permissions:
 
 ```bash
 STRAPI_URL=http://localhost:1337 STRAPI_API_TOKEN=your-token node scripts/seed-strapi.mjs
+```
+
+## Sync Fallback Content
+
+After updating content in Strapi, refresh the website fallback snapshot:
+
+```bash
+STRAPI_URL=http://localhost:1337 STRAPI_API_TOKEN=your-read-token node scripts/sync-strapi-fallback.mjs
 ```

@@ -1,113 +1,42 @@
-import { IsString, IsOptional, IsBoolean, IsInt, IsEnum, IsArray, IsDateString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export enum JobType {
-    FULL_TIME = 'FULL_TIME',
-    PART_TIME = 'PART_TIME',
-    CONTRACT = 'CONTRACT',
-    INTERNSHIP = 'INTERNSHIP',
+export class ApplyForJobDto {
+  @IsString()
+  @IsNotEmpty()
+  applicant_name: string;
+
+  @IsEmail()
+  email_id: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone_number: string;
+
+  @IsString()
+  @IsNotEmpty()
+  country: string;
+
+  @IsOptional()
+  @IsString()
+  cover_letter?: string;
 }
 
-export class CreateCareerDto {
-    @IsString()
-    title: string;
-
-    @IsString()
-    slug: string;
-
-    @IsString()
-    department: string;
-
-    @IsString()
-    location: string;
-
-    @IsOptional()
-    @IsEnum(JobType)
-    type?: JobType;
-
-    @IsOptional()
-    @IsBoolean()
-    isRemote?: boolean;
-
-    @IsString()
-    description: string;
-
-    @IsOptional()
-    @IsString()
-    requirements?: string;
-
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    benefits?: string[];
-
-    @IsOptional()
-    @IsInt()
-    minSalary?: number;
-
-    @IsOptional()
-    @IsInt()
-    maxSalary?: number;
-
-    @IsOptional()
-    @IsDateString()
-    deadline?: string;
-
-    @IsOptional()
-    @IsBoolean()
-    isActive?: boolean;
+export interface ErpJobDto {
+  id: string;
+  title: string;
+  designation: string | null;
+  company: string | null;
+  department: string | null;
+  employment_type: string | null;
+  location: string | null;
+  posted_on: string | null;
+  closes_on: string | null;
+  description: string | null;
+  salary: string | number | null;
 }
 
-export class UpdateCareerDto {
-    @IsOptional()
-    @IsString()
-    title?: string;
-
-    @IsOptional()
-    @IsString()
-    slug?: string;
-
-    @IsOptional()
-    @IsString()
-    department?: string;
-
-    @IsOptional()
-    @IsString()
-    location?: string;
-
-    @IsOptional()
-    @IsEnum(JobType)
-    type?: JobType;
-
-    @IsOptional()
-    @IsBoolean()
-    isRemote?: boolean;
-
-    @IsOptional()
-    @IsString()
-    description?: string;
-
-    @IsOptional()
-    @IsString()
-    requirements?: string;
-
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    benefits?: string[];
-
-    @IsOptional()
-    @IsInt()
-    minSalary?: number;
-
-    @IsOptional()
-    @IsInt()
-    maxSalary?: number;
-
-    @IsOptional()
-    @IsDateString()
-    deadline?: string;
-
-    @IsOptional()
-    @IsBoolean()
-    isActive?: boolean;
+export interface JobApplicationResultDto {
+  success: true;
+  applicant: string;
+  job: string;
 }

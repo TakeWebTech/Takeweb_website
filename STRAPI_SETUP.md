@@ -9,9 +9,13 @@ Add these values for `apps/web`:
 ```bash
 NEXT_PUBLIC_STRAPI_URL=http://localhost:1337
 STRAPI_API_TOKEN=your-read-token
+ERPNEXT_URL=https://your-erpnext-site.com
+ERPNEXT_API_KEY=your-erpnext-api-key
+ERPNEXT_API_SECRET=your-erpnext-api-secret
 ```
 
 `STRAPI_API_TOKEN` is optional only when the Strapi public role can read the content.
+ERPNext values are server-only and are used by the Careers page API routes.
 
 ## Content-Type Builder
 
@@ -34,6 +38,31 @@ Single type sections:
 - `testimonialsHeading`: section heading component
 - `testimonials`: repeatable testimonial cards
 - `cta`: component with title, description, primary CTA, secondary CTA
+
+### Site Page
+
+API ID: `site-page`
+
+Collection type for static public pages such as About, Contact, Partnerships, Security, Privacy, Terms, Status, and Coming Soon.
+
+Fields:
+
+- `title`: Text, required
+- `slug`: UID based on title, required
+- `path`: Text, required
+- `seoTitle`: Text
+- `seoDescription`: Text
+- `hero`: Page Hero component
+- `sections`: Dynamic zone using proper components:
+  - Card Grid Section
+  - People Section
+  - Timeline Section
+  - Legal Content Section
+  - Contact Section
+  - Status Section
+  - CTA Section
+- `isActive`: Boolean, default true
+- `sortOrder`: Number, integer
 
 ### Global
 
@@ -67,9 +96,9 @@ Fields:
 - `description`: Rich text
 - `icon`: Text
 - `gradient`: Text
-- `features`: JSON
-- `benefits`: JSON
-- `technologies`: JSON
+- `features`: repeatable Text Item component
+- `benefits`: repeatable Text Item component
+- `technologies`: repeatable Text Item component
 - `sortOrder`: Number, integer
 - `isActive`: Boolean, default true
 
@@ -106,7 +135,7 @@ Fields:
 - `challenge`: Rich text
 - `solution`: Rich text
 - `results`: Text
-- `technologies`: JSON
+- `technologies`: repeatable Text Item component
 - `coverImage`: Media, single
 - `isFeatured`: Boolean, default false
 - `isActive`: Boolean, default true
@@ -127,7 +156,7 @@ Fields:
 - `maxSalary`: Number
 - `description`: Rich text
 - `requirements`: Rich text
-- `benefits`: JSON
+- `benefits`: repeatable Text Item component
 - `deadline`: Date
 - `isRemote`: Boolean, default false
 - `isActive`: Boolean, default true
@@ -136,6 +165,9 @@ Fields:
 
 In Strapi admin, open `Settings > Users & Permissions > Roles > Public` and allow `find` and `findOne` for:
 
+- Global
+- Home Page
+- Site Page
 - Service
 - Blog Post
 - Project
@@ -152,3 +184,24 @@ STRAPI_URL=http://localhost:1337 STRAPI_API_TOKEN=your-token node scripts/seed-s
 ```
 
 The script posts the existing website content into Strapi through the REST API, including the Home Page single type sections.
+
+## Sync Latest Fallback Content
+
+The website imports fallback page content from `apps/web/content/site-pages.ts`. If Strapi is down, the public pages keep rendering from that last synced snapshot.
+
+After updating content in Strapi, run:
+
+```bash
+STRAPI_URL=http://localhost:1337 STRAPI_API_TOKEN=your-read-token node scripts/sync-strapi-fallback.mjs
+```
+
+Use the same command in deployment/CI after content changes if you want the fallback snapshot to update automatically.
+
+## ERPNext Careers Integration
+
+The Careers page calls local website API routes:
+
+- `GET /api/careers/jobs`: reads open `Job Opening` records from ERPNext; falls back to Strapi jobs if ERPNext is unavailable.
+- `POST /api/careers/apply`: creates a `Job Applicant` record in ERPNext.
+
+Create an ERPNext API key/secret for a user with read access to `Job Opening` and create access to `Job Applicant`, then set the `ERPNEXT_*` environment variables above.

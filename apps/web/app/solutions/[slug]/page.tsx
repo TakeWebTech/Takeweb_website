@@ -1,13 +1,10 @@
-"use client";
+import { notFound } from "next/navigation";
+import { CmsPageRenderer } from "@/components/cms-page-renderer";
+import { getSitePage } from "@/lib/strapi";
 
-import { use } from "react";
-
-export default function SolutionPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
-  return (
-    <div style={{ padding: "40px" }}>
-      <h1>{slug.replace("-", " ")}</h1>
-      <p>This solution page is dynamically generated.</p>
-    </div>
-  );
+export default async function SolutionPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const page = await getSitePage(slug);
+    if (!page) notFound();
+    return <CmsPageRenderer page={page} />;
 }
