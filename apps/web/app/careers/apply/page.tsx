@@ -6,9 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Briefcase, Loader2 } from "lucide-react";
 import { FloatingElements } from "@/components/floating-elements";
 import { Card3D } from "@/components/ui/card-3d";
-import { careersApi, ErpJob, responseError } from "@/lib/careers";
+import {
+  careersApi,
+  ErpJob,
+  JobApplicationInput,
+  responseError,
+} from "@/lib/careers";
 
-const initialForm = {
+const initialForm: JobApplicationInput = {
   applicant_name: "",
   email_id: "",
   phone_number: "",

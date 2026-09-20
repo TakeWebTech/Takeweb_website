@@ -2,9 +2,11 @@
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "globalEnv": [
+    "NODE_ENV",
     "STRAPI_URL",
     "STRAPI_API_TOKEN",
     "NEXT_PUBLIC_STRAPI_URL",
+    "ERP_BASE_URL",
     "NEXT_PUBLIC_API_URL",
     "NEXT_PUBLIC_SITE_URL"
   ],

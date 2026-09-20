@@ -45,17 +45,6 @@ const nextConfig = {
       process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337",
   },
 
-  // API rewrites for development (proxies /api/* to backend)
-  async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiUrl}/api/:path*`,
-      },
-    ];
-  },
-
   // Headers for security
   async headers() {
     return [

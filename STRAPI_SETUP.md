@@ -9,13 +9,11 @@ Add these values for `apps/web`:
 ```bash
 NEXT_PUBLIC_STRAPI_URL=http://localhost:1337
 STRAPI_API_TOKEN=your-read-token
-ERPNEXT_URL=https://your-erpnext-site.com
-ERPNEXT_API_KEY=your-erpnext-api-key
-ERPNEXT_API_SECRET=your-erpnext-api-secret
+ERP_BASE_URL=https://admin.takeweb.in
 ```
 
 `STRAPI_API_TOKEN` is optional only when the Strapi public role can read the content.
-ERPNext values are server-only and are used by the Careers page API routes.
+`ERP_BASE_URL` is server-only and is used by the Careers page API routes. The current TakeWeb Suite website methods are guest-enabled, so no ERP API key or secret is required.
 
 ## Content-Type Builder
 
@@ -199,9 +197,10 @@ Use the same command in deployment/CI after content changes if you want the fall
 
 ## ERPNext Careers Integration
 
-The Careers page calls local website API routes:
+The browser calls same-origin Next.js API routes, which call the TakeWeb Suite methods in ERPNext server-side:
 
-- `GET /api/careers/jobs`: reads open `Job Opening` records from ERPNext; falls back to Strapi jobs if ERPNext is unavailable.
-- `POST /api/careers/apply`: creates a `Job Applicant` record in ERPNext.
+- `GET /api/careers`: reads published `Job Opening` records.
+- `GET /api/careers/:id`: reads one published job.
+- `POST /api/careers/:id/apply`: creates a `Job Applicant` for that job.
 
-Create an ERPNext API key/secret for a user with read access to `Job Opening` and create access to `Job Applicant`, then set the `ERPNEXT_*` environment variables above.
+ERPNext remains the source of truth for jobs and applications. Careers requests do not use NestJS, Prisma, or Strapi.

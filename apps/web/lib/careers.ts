@@ -17,12 +17,16 @@ export type CareersError = {
   error?: string;
 };
 
-const apiBase = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-).replace(/\/$/, "");
+export type JobApplicationInput = {
+  applicant_name: string;
+  email_id: string;
+  phone_number: string;
+  country: string;
+  cover_letter?: string;
+};
 
 export function careersApi(path = "") {
-  return `${apiBase}/api/v1/careers${path}`;
+  return `/api/careers${path}`;
 }
 
 export async function responseError(response: Response) {
