@@ -22,6 +22,15 @@ import {
 type FormValues = Record<string, ApplicationFieldValue>;
 const MAX_RESUME_SIZE = 5 * 1024 * 1024;
 const RESUME_EXTENSIONS = ["pdf", "doc", "docx"];
+const CORE_FIELD_ORDER = [
+  "applicant_name",
+  "email_id",
+  "country",
+  "phone_number",
+  "cover_letter",
+  "resume",
+  "source",
+];
 
 function emptyValue(field: ErpApplicationField): ApplicationFieldValue {
   if (field.type === "Multi Select") return [];
@@ -89,6 +98,16 @@ function ApplyPageContent() {
         const schemaFields = Array.isArray(data.fields)
           ? (data.fields as ErpApplicationField[])
           : [];
+        if (!schemaFields.some((field) => field.key === "source")) {
+          schemaFields.push({
+            key: "source",
+            label: "Source",
+            type: "Text",
+            required: false,
+            help_text: "Where did you hear about this opportunity?",
+            system: true,
+          });
+        }
         setJob(data.job);
         setFields(schemaFields);
         setValues(
@@ -108,7 +127,17 @@ function ApplyPageContent() {
   }, [jobId]);
 
   const coreFields = useMemo(
-    () => fields.filter((field) => field.system),
+    () =>
+      fields
+        .filter((field) => field.system)
+        .sort((a, b) => {
+          const aIndex = CORE_FIELD_ORDER.indexOf(a.key);
+          const bIndex = CORE_FIELD_ORDER.indexOf(b.key);
+          return (
+            (aIndex === -1 ? CORE_FIELD_ORDER.length : aIndex) -
+            (bIndex === -1 ? CORE_FIELD_ORDER.length : bIndex)
+          );
+        }),
     [fields],
   );
   const additionalFields = useMemo(
@@ -198,6 +227,7 @@ function ApplyPageContent() {
     );
     formData.append("country", String(values.country || ""));
     formData.append("cover_letter", String(values.cover_letter || ""));
+    formData.append("source", String(values.source || "").trim());
     formData.append("answers", JSON.stringify(answers));
     if (resume) formData.append("resume", resume, resume.name);
 

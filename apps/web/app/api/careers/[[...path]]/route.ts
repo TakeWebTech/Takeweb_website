@@ -258,6 +258,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   erpForm.append("phone_number", formString(application, "phone_number"));
   erpForm.append("country", formString(application, "country"));
   erpForm.append("cover_letter", formString(application, "cover_letter"));
+  erpForm.append("source", formString(application, "source"));
   erpForm.append("answers", answersRaw);
   erpForm.append("resume", resume, resume.name);
 
