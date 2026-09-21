@@ -98,16 +98,6 @@ function ApplyPageContent() {
         const schemaFields = Array.isArray(data.fields)
           ? (data.fields as ErpApplicationField[])
           : [];
-        if (!schemaFields.some((field) => field.key === "source")) {
-          schemaFields.push({
-            key: "source",
-            label: "Source",
-            type: "Text",
-            required: false,
-            help_text: "Where did you hear about this opportunity?",
-            system: true,
-          });
-        }
         setJob(data.job);
         setFields(schemaFields);
         setValues(
