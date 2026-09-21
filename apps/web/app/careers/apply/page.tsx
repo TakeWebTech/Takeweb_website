@@ -16,11 +16,12 @@ import {
   careersApi,
   ErpApplicationField,
   ErpJob,
-  JobApplicationInput,
   responseError,
 } from "@/lib/careers";
 
 type FormValues = Record<string, ApplicationFieldValue>;
+const MAX_RESUME_SIZE = 5 * 1024 * 1024;
+const RESUME_EXTENSIONS = ["pdf", "doc", "docx"];
 
 function emptyValue(field: ErpApplicationField): ApplicationFieldValue {
   if (field.type === "Multi Select") return [];
@@ -43,11 +44,24 @@ function normalizedPhone(phone: string, country: string) {
   return parsed?.isValid() ? parsed.number : null;
 }
 
+function resumeError(file: File | null, required: boolean) {
+  if (!file) return required ? "Resume is required." : null;
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  if (!extension || !RESUME_EXTENSIONS.includes(extension)) {
+    return "Resume must be a PDF, DOC, or DOCX file.";
+  }
+  if (file.size > MAX_RESUME_SIZE) {
+    return "Resume must be 5 MB or smaller.";
+  }
+  return null;
+}
+
 function ApplyPageContent() {
   const jobId = useSearchParams().get("job");
   const [job, setJob] = useState<ErpJob | null>(null);
   const [fields, setFields] = useState<ErpApplicationField[]>([]);
   const [values, setValues] = useState<FormValues>({});
+  const [resume, setResume] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(true);
@@ -94,7 +108,7 @@ function ApplyPageContent() {
   }, [jobId]);
 
   const coreFields = useMemo(
-    () => fields.filter((field) => field.system && field.type !== "File"),
+    () => fields.filter((field) => field.system),
     [fields],
   );
   const additionalFields = useMemo(
@@ -112,9 +126,27 @@ function ApplyPageContent() {
     });
   }
 
+  function updateResume(file: File | null) {
+    const field = coreFields.find((item) => item.key === "resume");
+    const error = resumeError(file, Boolean(field?.required));
+    setResume(error ? null : file);
+    setSubmitStatus(null);
+    setErrors((current) => {
+      const next = { ...current };
+      if (error) next.resume = error;
+      else delete next.resume;
+      return next;
+    });
+  }
+
   function validate(section: ErpApplicationField[]) {
     const nextErrors: Record<string, string> = {};
     section.forEach((field) => {
+      if (field.type === "File") {
+        const error = resumeError(resume, field.required);
+        if (error) nextErrors[field.key] = error;
+        return;
+      }
       const value = values[field.key];
       const stringValue = typeof value === "string" ? value.trim() : "";
 
@@ -154,15 +186,20 @@ function ApplyPageContent() {
       additionalFields.map((field) => [field.key, values[field.key] ?? ""]),
     );
     const phone = String(values.phone_number || "");
-    const payload: JobApplicationInput = {
-      applicant_name: String(values.applicant_name || "").trim(),
-      email_id: String(values.email_id || "").trim(),
-      phone_number:
-        normalizedPhone(phone, String(values.country || "India")) || phone,
-      country: String(values.country || ""),
-      cover_letter: String(values.cover_letter || ""),
-      answers,
-    };
+    const formData = new FormData();
+    formData.append(
+      "applicant_name",
+      String(values.applicant_name || "").trim(),
+    );
+    formData.append("email_id", String(values.email_id || "").trim());
+    formData.append(
+      "phone_number",
+      normalizedPhone(phone, String(values.country || "India")) || phone,
+    );
+    formData.append("country", String(values.country || ""));
+    formData.append("cover_letter", String(values.cover_letter || ""));
+    formData.append("answers", JSON.stringify(answers));
+    if (resume) formData.append("resume", resume, resume.name);
 
     setIsSubmitting(true);
     setSubmitStatus(null);
@@ -171,8 +208,7 @@ function ApplyPageContent() {
         careersApi(`/${encodeURIComponent(jobId)}/apply`),
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: formData,
         },
       );
       if (!response.ok) throw new Error(await responseError(response));
@@ -268,7 +304,9 @@ function ApplyPageContent() {
                       <div
                         key={field.key}
                         className={
-                          field.type === "Long Text" ? "sm:col-span-2" : ""
+                          field.type === "Long Text" || field.type === "File"
+                            ? "sm:col-span-2"
+                            : ""
                         }
                       >
                         <ApplicationField
@@ -277,12 +315,16 @@ function ApplyPageContent() {
                           error={errors[field.key]}
                           onChange={(value) => updateValue(field.key, value)}
                           country={String(values.country || "India")}
+                          file={field.key === "resume" ? resume : undefined}
+                          onFileChange={
+                            field.key === "resume" ? updateResume : undefined
+                          }
                         />
                       </div>
                     ))}
                   </div>
 
-                  {/* ERP File questions are skipped until file handling is implemented. */}
+                  {/* Dynamic ERP file questions remain unsupported for now. */}
 
                   {(!hasAdditionalQuestions || step === 2) && (
                     <label className="flex items-start gap-3">

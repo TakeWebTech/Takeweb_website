@@ -17,15 +17,6 @@ export type CareersError = {
   error?: string;
 };
 
-export type JobApplicationInput = {
-  applicant_name: string;
-  email_id: string;
-  phone_number?: string;
-  country?: string;
-  cover_letter?: string;
-  answers?: Record<string, ApplicationFieldValue>;
-};
-
 export type ApplicationFieldType =
   | "Text"
   | "Long Text"

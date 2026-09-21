@@ -5,6 +5,7 @@ import {
   getCountryCallingCode,
   type CountryCode,
 } from "libphonenumber-js";
+import { Upload } from "lucide-react";
 import type { ApplicationFieldValue, ErpApplicationField } from "@/lib/careers";
 
 const inputClass =
@@ -41,18 +42,44 @@ export function ApplicationField({
   error,
   onChange,
   country = "India",
+  file,
+  onFileChange,
 }: {
   field: ErpApplicationField;
   value: ApplicationFieldValue | undefined;
   error?: string;
   onChange: (value: ApplicationFieldValue) => void;
   country?: string;
+  file?: File | null;
+  onFileChange?: (file: File | null) => void;
 }) {
   const options = fieldOptions(field);
   const stringValue = typeof value === "string" ? value : "";
   const describedBy = field.help_text ? `${field.key}-help` : undefined;
 
-  if (field.type === "File") return null;
+  if (field.type === "File") {
+    if (!field.system || field.key !== "resume" || !onFileChange) return null;
+
+    return (
+      <FieldShell field={field} error={error}>
+        <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] px-4 py-3 text-[var(--text-secondary)] transition-colors hover:border-amber-500 focus-within:border-amber-500">
+          <Upload className="shrink-0 text-amber-500" size={20} />
+          <span className="min-w-0 truncate">
+            {file?.name || "Choose PDF, DOC, or DOCX"}
+          </span>
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            onChange={(event) =>
+              onFileChange(event.target.files?.item(0) || null)
+            }
+            className="sr-only"
+            aria-describedby={describedBy}
+          />
+        </label>
+      </FieldShell>
+    );
+  }
 
   if (field.type === "Checkbox") {
     return (

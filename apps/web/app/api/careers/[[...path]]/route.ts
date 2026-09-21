@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type {
-  ErpApplicationField,
-  ErpJob,
-  JobApplicationInput,
-} from "@/lib/careers";
+import type { ErpApplicationField, ErpJob } from "@/lib/careers";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
 type FrappeResponse<T> = { message?: T; _server_messages?: string };
@@ -19,6 +15,8 @@ type ApplicationMessage = {
 };
 
 const ERP_METHOD_PATH = "/api/method/takeweb_suite.api.website";
+const MAX_RESUME_SIZE = 5 * 1024 * 1024;
+const RESUME_EXTENSIONS = new Set(["pdf", "doc", "docx"]);
 
 function erpBaseUrl() {
   return process.env.ERP_BASE_URL?.replace(/\/$/, "") || null;
@@ -117,21 +115,45 @@ async function callErp<T>(method: string, body?: Record<string, unknown>) {
   }
 }
 
-function validApplication(value: unknown): value is JobApplicationInput {
-  if (!value || typeof value !== "object") return false;
-  const input = value as Partial<JobApplicationInput>;
-  return Boolean(
-    input.applicant_name?.trim() &&
-    input.email_id?.trim() &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email_id) &&
-    (input.phone_number === undefined ||
-      typeof input.phone_number === "string") &&
-    (input.country === undefined || typeof input.country === "string") &&
-    (input.cover_letter === undefined ||
-      typeof input.cover_letter === "string") &&
-    (input.answers === undefined ||
-      (typeof input.answers === "object" && !Array.isArray(input.answers))),
-  );
+async function callErpMultipart<T>(method: string, body: FormData) {
+  const baseUrl = erpBaseUrl();
+  if (!baseUrl) {
+    return {
+      error: errorResponse("The careers service is not configured.", 503),
+    };
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}${ERP_METHOD_PATH}.${method}`, {
+      method: "POST",
+      body,
+      cache: "no-store",
+      signal: AbortSignal.timeout(60000),
+    });
+    const raw = await response.text();
+
+    let payload: FrappeResponse<T>;
+    try {
+      payload = JSON.parse(raw) as FrappeResponse<T>;
+    } catch {
+      return {
+        error: errorResponse("ERPNext returned an unexpected response.", 502),
+      };
+    }
+
+    if (!response.ok || payload.message === undefined) {
+      return { error: classifyErpError(response.status, raw) };
+    }
+
+    return { data: payload.message };
+  } catch {
+    return { error: errorResponse("ERPNext is currently unavailable.", 503) };
+  }
+}
+
+function formString(form: FormData, key: string) {
+  const value = form.get(key);
+  return typeof value === "string" ? value.trim() : "";
 }
 
 export async function GET(_request: NextRequest, context: RouteContext) {
@@ -193,23 +215,56 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const jobId = path[0];
   if (!jobId) return errorResponse("Job not found.", 404);
 
-  const application = await request.json().catch(() => null);
-  if (!validApplication(application)) {
+  const application = await request.formData().catch(() => null);
+  if (!application) {
+    return errorResponse("Invalid application form submission.", 400);
+  }
+
+  const applicantName = formString(application, "applicant_name");
+  const email = formString(application, "email_id");
+  if (!applicantName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return errorResponse(
       "Full name and a valid email address are required.",
       400,
     );
   }
 
-  const result = await callErp<ApplicationMessage>("apply_for_job", {
-    job: jobId,
-    applicant_name: application.applicant_name.trim(),
-    email_id: application.email_id.trim(),
-    phone_number: application.phone_number?.trim() || "",
-    country: application.country?.trim() || "",
-    cover_letter: application.cover_letter?.trim() || "",
-    answers: application.answers || {},
-  });
+  const resume = application.get("resume");
+  if (!(resume instanceof File) || !resume.name || resume.size === 0) {
+    return errorResponse("Resume is required.", 400);
+  }
+  const extension = resume.name.split(".").pop()?.toLowerCase();
+  if (!extension || !RESUME_EXTENSIONS.has(extension)) {
+    return errorResponse("Resume must be a PDF, DOC, or DOCX file.", 400);
+  }
+  if (resume.size > MAX_RESUME_SIZE) {
+    return errorResponse("Resume must be 5 MB or smaller.", 413);
+  }
+
+  const answersRaw = formString(application, "answers") || "{}";
+  try {
+    const answers = JSON.parse(answersRaw) as unknown;
+    if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
+      throw new Error("Invalid answers");
+    }
+  } catch {
+    return errorResponse("Application answers are invalid.", 400);
+  }
+
+  const erpForm = new FormData();
+  erpForm.append("job", jobId);
+  erpForm.append("applicant_name", applicantName);
+  erpForm.append("email_id", email);
+  erpForm.append("phone_number", formString(application, "phone_number"));
+  erpForm.append("country", formString(application, "country"));
+  erpForm.append("cover_letter", formString(application, "cover_letter"));
+  erpForm.append("answers", answersRaw);
+  erpForm.append("resume", resume, resume.name);
+
+  const result = await callErpMultipart<ApplicationMessage>(
+    "apply_for_job",
+    erpForm,
+  );
   if (result.error) return result.error;
   if (!result.data?.success) {
     return errorResponse("ERPNext did not accept the application.", 502);
