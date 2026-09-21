@@ -2,8 +2,14 @@
 
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Briefcase, Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Briefcase,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import {
   ApplicationField,
@@ -66,6 +72,7 @@ function resumeError(file: File | null, required: boolean) {
 }
 
 function ApplyPageContent() {
+  const router = useRouter();
   const jobId = useSearchParams().get("job");
   const [job, setJob] = useState<ErpJob | null>(null);
   const [fields, setFields] = useState<ErpApplicationField[]>([]);
@@ -77,6 +84,7 @@ function ApplyPageContent() {
   const [loadError, setLoadError] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [redirectSeconds, setRedirectSeconds] = useState(5);
   const [submitStatus, setSubmitStatus] = useState<{
     type: "success" | "error";
     message: string;
@@ -134,6 +142,21 @@ function ApplyPageContent() {
     () => fields.filter((field) => !field.system && field.type !== "File"),
     [fields],
   );
+  const submitted = submitStatus?.type === "success";
+
+  useEffect(() => {
+    if (!submitted) return;
+
+    const interval = window.setInterval(() => {
+      setRedirectSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    const redirect = window.setTimeout(() => router.push("/careers"), 5000);
+
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(redirect);
+    };
+  }, [router, submitted]);
 
   function updateValue(key: string, value: ApplicationFieldValue) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -296,124 +319,166 @@ function ApplyPageContent() {
               </div>
             ) : (
               <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-2xl p-8">
-                <div className="flex items-start justify-between gap-4 mb-8">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">
-                      Step {step} of {hasAdditionalQuestions ? 2 : 1}
-                    </p>
-                    <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-                      {step === 1
-                        ? "Basic Information"
-                        : "Additional Questions"}
-                    </h2>
-                    <p className="text-[var(--text-tertiary)]">
-                      {step === 1
-                        ? "Tell us how we can contact you."
-                        : "A few role-specific questions from our hiring team."}
-                    </p>
-                  </div>
-                </div>
-
-                <form
-                  onSubmit={submitApplication}
-                  className="space-y-6"
-                  noValidate
-                >
-                  <div className="grid sm:grid-cols-2 gap-5">
-                    {activeFields.map((field) => (
-                      <div
-                        key={field.key}
-                        className={
-                          field.type === "Long Text" || field.type === "File"
-                            ? "sm:col-span-2"
-                            : ""
-                        }
-                      >
-                        <ApplicationField
-                          field={field}
-                          value={values[field.key]}
-                          error={errors[field.key]}
-                          onChange={(value) => updateValue(field.key, value)}
-                          country={String(values.country || "India")}
-                          file={field.key === "resume" ? resume : undefined}
-                          onFileChange={
-                            field.key === "resume" ? updateResume : undefined
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Dynamic ERP file questions remain unsupported for now. */}
-
-                  {(!hasAdditionalQuestions || step === 2) && (
-                    <label className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={agreed}
-                        onChange={(event) => setAgreed(event.target.checked)}
-                        className="mt-1"
-                        required
-                      />
-                      <span className="text-sm text-[var(--text-tertiary)]">
-                        I agree to TakeWeb&apos;s{" "}
-                        <Link
-                          href="/privacy"
-                          className="text-amber-500 hover:underline"
-                        >
-                          Privacy Policy
-                        </Link>{" "}
-                        and consent to recruitment data processing.
-                      </span>
-                    </label>
-                  )}
-
-                  {submitStatus && (
-                    <div
-                      role="status"
-                      className={`p-4 rounded-xl ${submitStatus.type === "success" ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}
-                    >
-                      {submitStatus.message}
+                {submitted ? (
+                  <div
+                    className="flex min-h-80 flex-col items-center justify-center px-2 py-8 text-center sm:px-8"
+                    role="status"
+                  >
+                    <div className="mb-6 flex size-16 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-500">
+                      <CheckCircle2 size={34} strokeWidth={2} />
                     </div>
-                  )}
-
-                  <div className="flex gap-3">
-                    {step === 2 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setErrors({});
-                          setStep(1);
-                        }}
-                        className="px-6 py-3 font-semibold text-[var(--text-secondary)] border border-[var(--border-secondary)] rounded-xl hover:border-amber-500 transition-colors"
-                      >
-                        Back
-                      </button>
-                    )}
-                    {step === 1 && hasAdditionalQuestions ? (
-                      <button
-                        type="button"
-                        onClick={continueToQuestions}
-                        className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 text-white font-semibold bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-lg transition-all"
-                      >
-                        Continue <ArrowRight size={18} />
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        disabled={isSubmitting || !agreed}
-                        className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 text-white font-semibold bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isSubmitting ? "Submitting..." : "Submit Application"}
-                        {isSubmitting ? (
-                          <Loader2 className="animate-spin" size={18} />
-                        ) : (
-                          <ArrowRight size={18} />
-                        )}
-                      </button>
-                    )}
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-amber-500">
+                      Application received
+                    </p>
+                    <h2 className="mb-3 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
+                      Thank you for applying
+                    </h2>
+                    <p className="max-w-lg text-[var(--text-tertiary)]">
+                      Your application{job?.title ? ` for ${job.title}` : ""}{" "}
+                      has been submitted successfully. Our hiring team will
+                      contact you if your experience matches the role.
+                    </p>
+                    <Link
+                      href="/careers"
+                      className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-3 font-semibold text-white transition-shadow hover:shadow-lg"
+                    >
+                      View open roles <ArrowRight size={18} />
+                    </Link>
+                    <p className="mt-4 text-sm text-[var(--text-muted)]">
+                      Returning to Careers in {redirectSeconds} seconds
+                    </p>
                   </div>
-                </form>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-4 mb-8">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">
+                          Step {step} of {hasAdditionalQuestions ? 2 : 1}
+                        </p>
+                        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                          {step === 1
+                            ? "Basic Information"
+                            : "Additional Questions"}
+                        </h2>
+                        <p className="text-[var(--text-tertiary)]">
+                          {step === 1
+                            ? "Tell us how we can contact you."
+                            : "A few role-specific questions from our hiring team."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <form
+                      onSubmit={submitApplication}
+                      className="space-y-6"
+                      noValidate
+                    >
+                      <div className="grid sm:grid-cols-2 gap-5">
+                        {activeFields.map((field) => (
+                          <div
+                            key={field.key}
+                            className={
+                              field.type === "Long Text" ||
+                              field.type === "File"
+                                ? "sm:col-span-2"
+                                : ""
+                            }
+                          >
+                            <ApplicationField
+                              field={field}
+                              value={values[field.key]}
+                              error={errors[field.key]}
+                              onChange={(value) =>
+                                updateValue(field.key, value)
+                              }
+                              country={String(values.country || "India")}
+                              file={field.key === "resume" ? resume : undefined}
+                              onFileChange={
+                                field.key === "resume"
+                                  ? updateResume
+                                  : undefined
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Dynamic ERP file questions remain unsupported for now. */}
+
+                      {(!hasAdditionalQuestions || step === 2) && (
+                        <label className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={agreed}
+                            onChange={(event) =>
+                              setAgreed(event.target.checked)
+                            }
+                            className="mt-1"
+                            required
+                          />
+                          <span className="text-sm text-[var(--text-tertiary)]">
+                            I agree to TakeWeb&apos;s{" "}
+                            <Link
+                              href="/privacy"
+                              className="text-amber-500 hover:underline"
+                            >
+                              Privacy Policy
+                            </Link>{" "}
+                            and consent to recruitment data processing.
+                          </span>
+                        </label>
+                      )}
+
+                      {submitStatus && (
+                        <div
+                          role="status"
+                          className={`p-4 rounded-xl ${submitStatus.type === "success" ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"}`}
+                        >
+                          {submitStatus.message}
+                        </div>
+                      )}
+
+                      <div className="flex gap-3">
+                        {step === 2 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setErrors({});
+                              setStep(1);
+                            }}
+                            className="px-6 py-3 font-semibold text-[var(--text-secondary)] border border-[var(--border-secondary)] rounded-xl hover:border-amber-500 transition-colors"
+                          >
+                            Back
+                          </button>
+                        )}
+                        {step === 1 && hasAdditionalQuestions ? (
+                          <button
+                            type="button"
+                            onClick={continueToQuestions}
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 text-white font-semibold bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-lg transition-all"
+                          >
+                            Continue <ArrowRight size={18} />
+                          </button>
+                        ) : (
+                          <button
+                            type="submit"
+                            disabled={isSubmitting || !agreed}
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 text-white font-semibold bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isSubmitting
+                              ? "Submitting..."
+                              : "Submit Application"}
+                            {isSubmitting ? (
+                              <Loader2 className="animate-spin" size={18} />
+                            ) : (
+                              <ArrowRight size={18} />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </form>
+                  </>
+                )}
               </div>
             )}
           </div>
