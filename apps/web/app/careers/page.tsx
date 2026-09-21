@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FloatingElements } from "@/components/floating-elements";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Card3D } from "@/components/ui/card-3d";
+import { JobDescription } from "@/components/job-description";
 import {
   careersApi,
   ErpJob,
@@ -444,9 +445,12 @@ export default function CareersPage() {
                     </span>
                   </div>
 
-                  <p className="text-sm text-[var(--text-tertiary)] mb-4 line-clamp-2">
-                    {position.description}
-                  </p>
+                  <div className="mb-4">
+                    <JobDescription
+                      description={position.description}
+                      compact
+                    />
+                  </div>
 
                   {/* Meta info */}
                   <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-[var(--border-primary)] text-sm text-[var(--text-muted)]">
@@ -558,10 +562,7 @@ export default function CareersPage() {
                 <h3 className="font-semibold text-[var(--text-primary)] mb-3">
                   About the Role
                 </h3>
-                <p className="text-[var(--text-tertiary)] whitespace-pre-wrap">
-                  {selectedJob.description ||
-                    "Details will be shared during the application process."}
-                </p>
+                <JobDescription description={selectedJob.description} />
               </div>
 
               {/* Apply Section */}

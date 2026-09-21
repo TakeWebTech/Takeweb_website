@@ -11,6 +11,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { Card3D } from "@/components/ui/card-3d";
+import { JobDescription } from "@/components/job-description";
 import {
   careersApi,
   ErpJob,
@@ -123,10 +124,7 @@ export default function JobPage({
               <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-3">
                 About the Role
               </h2>
-              <p className="text-[var(--text-tertiary)] whitespace-pre-wrap">
-                {job.description ||
-                  "Details will be shared during the application process."}
-              </p>
+              <JobDescription description={job.description} />
             </div>
 
             <Link
