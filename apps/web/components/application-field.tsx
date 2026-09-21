@@ -1,9 +1,28 @@
 "use client";
 
+import {
+  getCountries,
+  getCountryCallingCode,
+  type CountryCode,
+} from "libphonenumber-js";
 import type { ApplicationFieldValue, ErpApplicationField } from "@/lib/careers";
 
 const inputClass =
   "w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-amber-500";
+
+const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+export const countries = getCountries()
+  .map((code) => ({
+    code,
+    name: countryNames.of(code) || code,
+    callingCode: `+${getCountryCallingCode(code)}`,
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+export function countryCodeFromName(name: string): CountryCode | undefined {
+  return countries.find((country) => country.name === name)?.code;
+}
 
 export function fieldOptions(field: ErpApplicationField) {
   if (Array.isArray(field.options)) return field.options.filter(Boolean);
@@ -21,11 +40,13 @@ export function ApplicationField({
   value,
   error,
   onChange,
+  country = "India",
 }: {
   field: ErpApplicationField;
   value: ApplicationFieldValue | undefined;
   error?: string;
   onChange: (value: ApplicationFieldValue) => void;
+  country?: string;
 }) {
   const options = fieldOptions(field);
   const stringValue = typeof value === "string" ? value : "";
@@ -107,6 +128,27 @@ export function ApplicationField({
     );
   }
 
+  if (field.key === "country") {
+    return (
+      <FieldShell field={field} error={error}>
+        <select
+          value={stringValue}
+          onChange={(event) => onChange(event.target.value)}
+          className={inputClass}
+          aria-describedby={describedBy}
+          autoComplete="country-name"
+        >
+          <option value="">Select a country</option>
+          {countries.map((countryOption) => (
+            <option key={countryOption.code} value={countryOption.name}>
+              {countryOption.name}
+            </option>
+          ))}
+        </select>
+      </FieldShell>
+    );
+  }
+
   if (field.type === "Select") {
     return (
       <FieldShell field={field} error={error}>
@@ -151,6 +193,31 @@ export function ApplicationField({
       Text: "text",
     }[field.type] || "text";
 
+  if (field.key === "phone_number" || field.type === "Phone") {
+    const countryCode = countryCodeFromName(country) || "IN";
+    const callingCode = `+${getCountryCallingCode(countryCode)}`;
+
+    return (
+      <FieldShell field={field} error={error}>
+        <div className="flex overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-tertiary)] focus-within:border-amber-500">
+          <span className="flex items-center border-r border-[var(--border-primary)] px-4 text-[var(--text-secondary)]">
+            {callingCode}
+          </span>
+          <input
+            type="tel"
+            inputMode="tel"
+            value={stringValue}
+            onChange={(event) => onChange(event.target.value)}
+            className="min-w-0 flex-1 bg-transparent px-4 py-3 text-[var(--text-primary)] focus:outline-none"
+            aria-describedby={describedBy}
+            autoComplete="tel-national"
+            placeholder="Phone number"
+          />
+        </div>
+      </FieldShell>
+    );
+  }
+
   return (
     <FieldShell field={field} error={error}>
       <input
@@ -159,6 +226,7 @@ export function ApplicationField({
         onChange={(event) => onChange(event.target.value)}
         className={inputClass}
         aria-describedby={describedBy}
+        autoComplete={field.type === "Email" ? "email" : undefined}
       />
     </FieldShell>
   );

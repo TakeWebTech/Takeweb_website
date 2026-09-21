@@ -4,7 +4,11 @@ import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Briefcase, Loader2 } from "lucide-react";
-import { ApplicationField } from "@/components/application-field";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+import {
+  ApplicationField,
+  countryCodeFromName,
+} from "@/components/application-field";
 import { FloatingElements } from "@/components/floating-elements";
 import { Card3D } from "@/components/ui/card-3d";
 import {
@@ -29,6 +33,14 @@ function hasValue(value: ApplicationFieldValue | undefined) {
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "boolean") return value;
   return Boolean(value?.trim());
+}
+
+function normalizedPhone(phone: string, country: string) {
+  const parsed = parsePhoneNumberFromString(
+    phone.trim(),
+    countryCodeFromName(country),
+  );
+  return parsed?.isValid() ? parsed.number : null;
 }
 
 function ApplyPageContent() {
@@ -92,6 +104,7 @@ function ApplyPageContent() {
 
   function updateValue(key: string, value: ApplicationFieldValue) {
     setValues((current) => ({ ...current, [key]: value }));
+    setSubmitStatus(null);
     setErrors((current) => {
       const next = { ...current };
       delete next[key];
@@ -102,8 +115,24 @@ function ApplyPageContent() {
   function validate(section: ErpApplicationField[]) {
     const nextErrors: Record<string, string> = {};
     section.forEach((field) => {
-      if (field.required && !hasValue(values[field.key])) {
+      const value = values[field.key];
+      const stringValue = typeof value === "string" ? value.trim() : "";
+
+      if (field.required && !hasValue(value)) {
         nextErrors[field.key] = `${field.label} is required.`;
+      } else if (
+        (field.key === "email_id" || field.type === "Email") &&
+        stringValue &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(stringValue)
+      ) {
+        nextErrors[field.key] = "Enter a valid email address.";
+      } else if (
+        (field.key === "phone_number" || field.type === "Phone") &&
+        stringValue &&
+        !normalizedPhone(stringValue, String(values.country || "India"))
+      ) {
+        nextErrors[field.key] =
+          "Enter a valid phone number for the selected country.";
       }
     });
     setErrors(nextErrors);
@@ -124,10 +153,12 @@ function ApplyPageContent() {
     const answers = Object.fromEntries(
       additionalFields.map((field) => [field.key, values[field.key] ?? ""]),
     );
+    const phone = String(values.phone_number || "");
     const payload: JobApplicationInput = {
-      applicant_name: String(values.applicant_name || ""),
-      email_id: String(values.email_id || ""),
-      phone_number: String(values.phone_number || ""),
+      applicant_name: String(values.applicant_name || "").trim(),
+      email_id: String(values.email_id || "").trim(),
+      phone_number:
+        normalizedPhone(phone, String(values.country || "India")) || phone,
       country: String(values.country || ""),
       cover_letter: String(values.cover_letter || ""),
       answers,
@@ -245,6 +276,7 @@ function ApplyPageContent() {
                           value={values[field.key]}
                           error={errors[field.key]}
                           onChange={(value) => updateValue(field.key, value)}
+                          country={String(values.country || "India")}
                         />
                       </div>
                     ))}
