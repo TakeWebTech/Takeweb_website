@@ -1,34 +1,45 @@
 "use client";
 
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Briefcase, Loader2 } from "lucide-react";
+import { ApplicationField } from "@/components/application-field";
 import { FloatingElements } from "@/components/floating-elements";
 import { Card3D } from "@/components/ui/card-3d";
 import {
+  ApplicationFieldValue,
   careersApi,
+  ErpApplicationField,
   ErpJob,
   JobApplicationInput,
   responseError,
 } from "@/lib/careers";
 
-const initialForm: JobApplicationInput = {
-  applicant_name: "",
-  email_id: "",
-  phone_number: "",
-  country: "India",
-  cover_letter: "",
-};
+type FormValues = Record<string, ApplicationFieldValue>;
 
-const inputClass =
-  "w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-amber-500";
+function emptyValue(field: ErpApplicationField): ApplicationFieldValue {
+  if (field.type === "Multi Select") return [];
+  if (field.type === "Checkbox") return false;
+  if (field.key === "country") return "India";
+  return "";
+}
+
+function hasValue(value: ApplicationFieldValue | undefined) {
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "boolean") return value;
+  return Boolean(value?.trim());
+}
 
 function ApplyPageContent() {
   const jobId = useSearchParams().get("job");
   const [job, setJob] = useState<ErpJob | null>(null);
-  const [jobError, setJobError] = useState("");
-  const [formData, setFormData] = useState(initialForm);
+  const [fields, setFields] = useState<ErpApplicationField[]>([]);
+  const [values, setValues] = useState<FormValues>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [step, setStep] = useState<1 | 2>(1);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{
@@ -38,26 +49,94 @@ function ApplyPageContent() {
 
   useEffect(() => {
     if (!jobId) {
-      setJobError("Please select a job before applying.");
+      setLoadError("Please select a job before applying.");
+      setLoading(false);
       return;
     }
 
-    fetch(careersApi(`/${encodeURIComponent(jobId)}`))
-      .then(async (response) => {
-        if (!response.ok) throw new Error(await responseError(response));
-        return response.json();
+    Promise.all([
+      fetch(careersApi(`/${encodeURIComponent(jobId)}`)),
+      fetch(careersApi(`/${encodeURIComponent(jobId)}/application-form`)),
+    ])
+      .then(async ([jobResponse, formResponse]) => {
+        if (!jobResponse.ok) throw new Error(await responseError(jobResponse));
+        if (!formResponse.ok)
+          throw new Error(await responseError(formResponse));
+        return Promise.all([jobResponse.json(), formResponse.json()]);
       })
-      .then((data) => setJob(data.job))
+      .then(([jobData, formData]) => {
+        const schemaFields = Array.isArray(formData.fields)
+          ? (formData.fields as ErpApplicationField[])
+          : [];
+        setJob(jobData.job);
+        setFields(schemaFields);
+        setValues(
+          Object.fromEntries(
+            schemaFields.map((field) => [field.key, emptyValue(field)]),
+          ),
+        );
+      })
       .catch((error) =>
-        setJobError(
-          error instanceof Error ? error.message : "Unable to load this job.",
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load the application form.",
         ),
-      );
+      )
+      .finally(() => setLoading(false));
   }, [jobId]);
+
+  const coreFields = useMemo(
+    () => fields.filter((field) => field.system && field.type !== "File"),
+    [fields],
+  );
+  const additionalFields = useMemo(
+    () => fields.filter((field) => !field.system && field.type !== "File"),
+    [fields],
+  );
+
+  function updateValue(key: string, value: ApplicationFieldValue) {
+    setValues((current) => ({ ...current, [key]: value }));
+    setErrors((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }
+
+  function validate(section: ErpApplicationField[]) {
+    const nextErrors: Record<string, string> = {};
+    section.forEach((field) => {
+      if (field.required && !hasValue(values[field.key])) {
+        nextErrors[field.key] = `${field.label} is required.`;
+      }
+    });
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  function continueToQuestions() {
+    if (validate(coreFields)) setStep(2);
+  }
 
   async function submitApplication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!jobId || !agreed) return;
+    const visibleFields = additionalFields.length
+      ? additionalFields
+      : coreFields;
+    if (!jobId || !agreed || !validate(visibleFields)) return;
+
+    const answers = Object.fromEntries(
+      additionalFields.map((field) => [field.key, values[field.key] ?? ""]),
+    );
+    const payload: JobApplicationInput = {
+      applicant_name: String(values.applicant_name || ""),
+      email_id: String(values.email_id || ""),
+      phone_number: String(values.phone_number || ""),
+      country: String(values.country || ""),
+      cover_letter: String(values.cover_letter || ""),
+      answers,
+    };
 
     setIsSubmitting(true);
     setSubmitStatus(null);
@@ -67,7 +146,7 @@ function ApplyPageContent() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         },
       );
       if (!response.ok) throw new Error(await responseError(response));
@@ -76,8 +155,6 @@ function ApplyPageContent() {
         type: "success",
         message: "Application submitted successfully.",
       });
-      setFormData(initialForm);
-      setAgreed(false);
     } catch (error) {
       setSubmitStatus({
         type: "error",
@@ -90,6 +167,9 @@ function ApplyPageContent() {
       setIsSubmitting(false);
     }
   }
+
+  const activeFields = step === 1 ? coreFields : additionalFields;
+  const hasAdditionalQuestions = additionalFields.length > 0;
 
   return (
     <>
@@ -121,123 +201,83 @@ function ApplyPageContent() {
       <section className="section-padding pt-8">
         <div className="container-main">
           <div className="max-w-3xl mx-auto">
-            {jobError ? (
+            {loadError ? (
               <Card3D className="p-8">
                 <p className="text-red-500" role="alert">
-                  {jobError}
+                  {loadError}
                 </p>
               </Card3D>
-            ) : !job ? (
-              <div className="flex justify-center py-16">
+            ) : loading ? (
+              <div className="flex flex-col items-center gap-3 py-16 text-[var(--text-tertiary)]">
                 <Loader2 className="animate-spin text-amber-500" size={42} />
+                Loading application form...
               </div>
             ) : (
               <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-2xl p-8">
-                <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-                  Your Details
-                </h2>
-                <p className="text-[var(--text-tertiary)] mb-8">
-                  Complete the form below to apply for this position.
-                </p>
+                <div className="flex items-start justify-between gap-4 mb-8">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">
+                      Step {step} of {hasAdditionalQuestions ? 2 : 1}
+                    </p>
+                    <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                      {step === 1
+                        ? "Basic Information"
+                        : "Additional Questions"}
+                    </h2>
+                    <p className="text-[var(--text-tertiary)]">
+                      {step === 1
+                        ? "Tell us how we can contact you."
+                        : "A few role-specific questions from our hiring team."}
+                    </p>
+                  </div>
+                </div>
 
-                <form onSubmit={submitApplication} className="space-y-6">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <Field label="Full Name" required>
-                      <input
-                        required
-                        value={formData.applicant_name}
-                        onChange={(event) =>
-                          setFormData((value) => ({
-                            ...value,
-                            applicant_name: event.target.value,
-                          }))
+                <form
+                  onSubmit={submitApplication}
+                  className="space-y-6"
+                  noValidate
+                >
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    {activeFields.map((field) => (
+                      <div
+                        key={field.key}
+                        className={
+                          field.type === "Long Text" ? "sm:col-span-2" : ""
                         }
-                        className={inputClass}
-                        autoComplete="name"
-                      />
-                    </Field>
-                    <Field label="Email" required>
-                      <input
-                        required
-                        type="email"
-                        value={formData.email_id}
-                        onChange={(event) =>
-                          setFormData((value) => ({
-                            ...value,
-                            email_id: event.target.value,
-                          }))
-                        }
-                        className={inputClass}
-                        autoComplete="email"
-                      />
-                    </Field>
-                    <Field label="Phone" required>
-                      <input
-                        required
-                        type="tel"
-                        value={formData.phone_number}
-                        onChange={(event) =>
-                          setFormData((value) => ({
-                            ...value,
-                            phone_number: event.target.value,
-                          }))
-                        }
-                        className={inputClass}
-                        autoComplete="tel"
-                      />
-                    </Field>
-                    <Field label="Country" required>
-                      <input
-                        required
-                        value={formData.country}
-                        onChange={(event) =>
-                          setFormData((value) => ({
-                            ...value,
-                            country: event.target.value,
-                          }))
-                        }
-                        className={inputClass}
-                        autoComplete="country-name"
-                      />
-                    </Field>
+                      >
+                        <ApplicationField
+                          field={field}
+                          value={values[field.key]}
+                          error={errors[field.key]}
+                          onChange={(value) => updateValue(field.key, value)}
+                        />
+                      </div>
+                    ))}
                   </div>
 
-                  <Field label="Cover Letter">
-                    <textarea
-                      value={formData.cover_letter}
-                      onChange={(event) =>
-                        setFormData((value) => ({
-                          ...value,
-                          cover_letter: event.target.value,
-                        }))
-                      }
-                      rows={7}
-                      className={`${inputClass} resize-none`}
-                      placeholder="Tell us why you are interested in this role..."
-                    />
-                  </Field>
+                  {/* ERP File questions are skipped until file handling is implemented. */}
 
-                  {/* Resume upload will be added after ERPNext file handling is implemented. */}
-
-                  <label className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={agreed}
-                      onChange={(event) => setAgreed(event.target.checked)}
-                      className="mt-1"
-                      required
-                    />
-                    <span className="text-sm text-[var(--text-tertiary)]">
-                      I agree to TakeWeb&apos;s{" "}
-                      <Link
-                        href="/privacy"
-                        className="text-amber-500 hover:underline"
-                      >
-                        Privacy Policy
-                      </Link>{" "}
-                      and consent to recruitment data processing.
-                    </span>
-                  </label>
+                  {(!hasAdditionalQuestions || step === 2) && (
+                    <label className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={agreed}
+                        onChange={(event) => setAgreed(event.target.checked)}
+                        className="mt-1"
+                        required
+                      />
+                      <span className="text-sm text-[var(--text-tertiary)]">
+                        I agree to TakeWeb&apos;s{" "}
+                        <Link
+                          href="/privacy"
+                          className="text-amber-500 hover:underline"
+                        >
+                          Privacy Policy
+                        </Link>{" "}
+                        and consent to recruitment data processing.
+                      </span>
+                    </label>
+                  )}
 
                   {submitStatus && (
                     <div
@@ -248,18 +288,42 @@ function ApplyPageContent() {
                     </div>
                   )}
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || !agreed}
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 text-white font-semibold bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? "Submitting..." : "Submit Application"}
-                    {isSubmitting ? (
-                      <Loader2 className="animate-spin" size={18} />
-                    ) : (
-                      <ArrowRight size={18} />
+                  <div className="flex gap-3">
+                    {step === 2 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setErrors({});
+                          setStep(1);
+                        }}
+                        className="px-6 py-3 font-semibold text-[var(--text-secondary)] border border-[var(--border-secondary)] rounded-xl hover:border-amber-500 transition-colors"
+                      >
+                        Back
+                      </button>
                     )}
-                  </button>
+                    {step === 1 && hasAdditionalQuestions ? (
+                      <button
+                        type="button"
+                        onClick={continueToQuestions}
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 text-white font-semibold bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-lg transition-all"
+                      >
+                        Continue <ArrowRight size={18} />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={isSubmitting || !agreed}
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 text-white font-semibold bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSubmitting ? "Submitting..." : "Submit Application"}
+                        {isSubmitting ? (
+                          <Loader2 className="animate-spin" size={18} />
+                        ) : (
+                          <ArrowRight size={18} />
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </form>
               </div>
             )}
@@ -267,26 +331,6 @@ function ApplyPageContent() {
         </div>
       </section>
     </>
-  );
-}
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="text-sm text-[var(--text-muted)] mb-2 block">
-        {label}
-        {required ? " *" : ""}
-      </span>
-      {children}
-    </label>
   );
 }
 

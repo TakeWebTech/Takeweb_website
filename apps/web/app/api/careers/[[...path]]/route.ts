@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { ErpJob, JobApplicationInput } from "@/lib/careers";
+import type {
+  ErpApplicationField,
+  ErpJob,
+  JobApplicationInput,
+} from "@/lib/careers";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
 type FrappeResponse<T> = { message?: T };
 type JobsMessage = { jobs?: ErpJob[]; count?: number };
 type JobMessage = { job?: ErpJob };
-type ApplicationMessage = { success?: boolean; applicant?: string; job?: string };
+type ApplicationFormMessage = {
+  job?: string;
+  application_form?: { fields?: ErpApplicationField[] };
+};
+type ApplicationMessage = {
+  success?: boolean;
+  applicant?: string;
+  job?: string;
+};
 
 const ERP_METHOD_PATH = "/api/method/takeweb_suite.api.website";
 
@@ -42,10 +54,12 @@ function classifyErpError(status: number, raw: string) {
   return errorResponse("ERPNext could not process the request.", 502);
 }
 
-async function callErp<T>(method: string, body?: Record<string, string>) {
+async function callErp<T>(method: string, body?: Record<string, unknown>) {
   const baseUrl = erpBaseUrl();
   if (!baseUrl) {
-    return { error: errorResponse("The careers service is not configured.", 503) };
+    return {
+      error: errorResponse("The careers service is not configured.", 503),
+    };
   }
 
   try {
@@ -62,7 +76,9 @@ async function callErp<T>(method: string, body?: Record<string, string>) {
     try {
       payload = JSON.parse(raw) as FrappeResponse<T>;
     } catch {
-      return { error: errorResponse("ERPNext returned an unexpected response.", 502) };
+      return {
+        error: errorResponse("ERPNext returned an unexpected response.", 502),
+      };
     }
 
     if (!response.ok || payload.message === undefined) {
@@ -80,11 +96,15 @@ function validApplication(value: unknown): value is JobApplicationInput {
   const input = value as Partial<JobApplicationInput>;
   return Boolean(
     input.applicant_name?.trim() &&
-      input.email_id?.trim() &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email_id) &&
-      input.phone_number?.trim() &&
-      input.country?.trim() &&
-      (input.cover_letter === undefined || typeof input.cover_letter === "string"),
+    input.email_id?.trim() &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email_id) &&
+    (input.phone_number === undefined ||
+      typeof input.phone_number === "string") &&
+    (input.country === undefined || typeof input.country === "string") &&
+    (input.cover_letter === undefined ||
+      typeof input.cover_letter === "string") &&
+    (input.answers === undefined ||
+      (typeof input.answers === "object" && !Array.isArray(input.answers))),
   );
 }
 
@@ -95,7 +115,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const result = await callErp<JobsMessage>("get_jobs");
     if (result.error) return result.error;
     if (!Array.isArray(result.data?.jobs)) {
-      return errorResponse("ERPNext returned an unexpected jobs response.", 502);
+      return errorResponse(
+        "ERPNext returned an unexpected jobs response.",
+        502,
+      );
     }
     return NextResponse.json({
       jobs: result.data.jobs,
@@ -116,6 +139,23 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ job: result.data.job });
   }
 
+  if (path.length === 2 && path[1] === "application-form") {
+    const id = path[0];
+    if (!id) return errorResponse("Job not found.", 404);
+    const result = await callErp<ApplicationFormMessage>(
+      `get_application_form?job=${encodeURIComponent(id)}`,
+    );
+    const fields = result.data?.application_form?.fields;
+    if (result.error) return result.error;
+    if (!result.data?.job || !Array.isArray(fields)) {
+      return errorResponse(
+        "ERPNext returned an unexpected application form response.",
+        502,
+      );
+    }
+    return NextResponse.json({ job: result.data.job, fields });
+  }
+
   return errorResponse("Career route not found.", 404);
 }
 
@@ -130,7 +170,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const application = await request.json().catch(() => null);
   if (!validApplication(application)) {
     return errorResponse(
-      "Full name, valid email, phone number, and country are required.",
+      "Full name and a valid email address are required.",
       400,
     );
   }
@@ -139,9 +179,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
     job: jobId,
     applicant_name: application.applicant_name.trim(),
     email_id: application.email_id.trim(),
-    phone_number: application.phone_number.trim(),
-    country: application.country.trim(),
+    phone_number: application.phone_number?.trim() || "",
+    country: application.country?.trim() || "",
     cover_letter: application.cover_letter?.trim() || "",
+    answers: application.answers || {},
   });
   if (result.error) return result.error;
   if (!result.data?.success) {

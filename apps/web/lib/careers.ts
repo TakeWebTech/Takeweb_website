@@ -20,9 +20,41 @@ export type CareersError = {
 export type JobApplicationInput = {
   applicant_name: string;
   email_id: string;
-  phone_number: string;
-  country: string;
+  phone_number?: string;
+  country?: string;
   cover_letter?: string;
+  answers?: Record<string, ApplicationFieldValue>;
+};
+
+export type ApplicationFieldType =
+  | "Text"
+  | "Long Text"
+  | "Email"
+  | "Phone"
+  | "Number"
+  | "Date"
+  | "Select"
+  | "Multi Select"
+  | "Checkbox"
+  | "Yes/No"
+  | "URL"
+  | "File";
+
+export type ApplicationFieldValue = string | string[] | boolean;
+
+export type ErpApplicationField = {
+  key: string;
+  label: string;
+  type: ApplicationFieldType;
+  required: boolean;
+  options?: string[] | string | null;
+  help_text?: string | null;
+  system?: boolean;
+};
+
+export type ErpApplicationForm = {
+  job: string;
+  fields: ErpApplicationField[];
 };
 
 export function careersApi(path = "") {
