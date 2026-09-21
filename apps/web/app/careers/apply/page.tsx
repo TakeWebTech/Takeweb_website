@@ -54,21 +54,16 @@ function ApplyPageContent() {
       return;
     }
 
-    Promise.all([
-      fetch(careersApi(`/${encodeURIComponent(jobId)}`)),
-      fetch(careersApi(`/${encodeURIComponent(jobId)}/application-form`)),
-    ])
-      .then(async ([jobResponse, formResponse]) => {
-        if (!jobResponse.ok) throw new Error(await responseError(jobResponse));
-        if (!formResponse.ok)
-          throw new Error(await responseError(formResponse));
-        return Promise.all([jobResponse.json(), formResponse.json()]);
+    fetch(careersApi(`/${encodeURIComponent(jobId)}/application-form`))
+      .then(async (response) => {
+        if (!response.ok) throw new Error(await responseError(response));
+        return response.json();
       })
-      .then(([jobData, formData]) => {
-        const schemaFields = Array.isArray(formData.fields)
-          ? (formData.fields as ErpApplicationField[])
+      .then((data) => {
+        const schemaFields = Array.isArray(data.fields)
+          ? (data.fields as ErpApplicationField[])
           : [];
-        setJob(jobData.job);
+        setJob(data.job);
         setFields(schemaFields);
         setValues(
           Object.fromEntries(

@@ -6,11 +6,10 @@ import type {
 } from "@/lib/careers";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
-type FrappeResponse<T> = { message?: T };
+type FrappeResponse<T> = { message?: T; _server_messages?: string };
 type JobsMessage = { jobs?: ErpJob[]; count?: number };
-type JobMessage = { job?: ErpJob };
-type ApplicationFormMessage = {
-  job?: string;
+type JobMessage = {
+  job?: ErpJob;
   application_form?: { fields?: ErpApplicationField[] };
 };
 type ApplicationMessage = {
@@ -31,6 +30,7 @@ function errorResponse(message: string, status: number) {
 
 function classifyErpError(status: number, raw: string) {
   const message = raw.toLowerCase();
+  const frappeMessage = getFrappeErrorMessage(raw);
 
   if (status === 404 || message.includes("not found")) {
     return errorResponse("Job not found or no longer published.", 404);
@@ -49,9 +49,35 @@ function classifyErpError(status: number, raw: string) {
     return errorResponse("Please provide a valid email address.", 400);
   }
   if (status >= 500) {
-    return errorResponse("ERPNext is currently unavailable.", 503);
+    return errorResponse(
+      frappeMessage || "ERPNext is currently unavailable.",
+      503,
+    );
   }
-  return errorResponse("ERPNext could not process the request.", 502);
+  if (status >= 400) {
+    return errorResponse(
+      frappeMessage || "ERPNext could not process the request.",
+      400,
+    );
+  }
+  return errorResponse(
+    frappeMessage || "ERPNext could not process the request.",
+    502,
+  );
+}
+
+function getFrappeErrorMessage(raw: string) {
+  try {
+    const payload = JSON.parse(raw) as FrappeResponse<unknown>;
+    if (!payload._server_messages) return null;
+    const messages = JSON.parse(payload._server_messages) as string[];
+    const first = messages[0]
+      ? (JSON.parse(messages[0]) as { message?: string })
+      : null;
+    return first?.message || null;
+  } catch {
+    return null;
+  }
 }
 
 async function callErp<T>(method: string, body?: Record<string, unknown>) {
@@ -67,8 +93,8 @@ async function callErp<T>(method: string, body?: Record<string, unknown>) {
       method: body ? "POST" : "GET",
       headers: body ? { "Content-Type": "application/json" } : undefined,
       body: body ? JSON.stringify(body) : undefined,
-      cache: "no-store",
-      signal: AbortSignal.timeout(15000),
+      ...(body ? { cache: "no-store" as const } : { next: { revalidate: 60 } }),
+      signal: AbortSignal.timeout(body ? 60000 : 30000),
     });
     const raw = await response.text();
 
@@ -142,14 +168,23 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   if (path.length === 2 && path[1] === "application-form") {
     const id = path[0];
     if (!id) return errorResponse("Job not found.", 404);
-    const result = await callErp<ApplicationFormMessage>(
-      `get_application_form?job=${encodeURIComponent(id)}`,
+    const result = await callErp<JobMessage>(
+      `get_job?job=${encodeURIComponent(id)}`,
     );
     const fields = result.data?.application_form?.fields;
     if (result.error) return result.error;
-    if (!result.data?.job || !Array.isArray(fields)) {
+    if (!result.data?.job?.id || !Array.isArray(fields)) {
       return errorResponse(
         "ERPNext returned an unexpected application form response.",
+        502,
+      );
+    }
+    const invalidQuestion = fields.find(
+      (field) => !field.system && (!field.key || typeof field.key !== "string"),
+    );
+    if (invalidQuestion) {
+      return errorResponse(
+        `ERPNext application question "${invalidQuestion.label}" is missing its field key.`,
         502,
       );
     }
