@@ -179,15 +179,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         502,
       );
     }
-    const invalidQuestion = fields.find(
-      (field) => !field.system && (!field.key || typeof field.key !== "string"),
-    );
-    if (invalidQuestion) {
-      return errorResponse(
-        `ERPNext application question "${invalidQuestion.label}" is missing its field key.`,
-        502,
-      );
-    }
     return NextResponse.json({ job: result.data.job, fields });
   }
 
