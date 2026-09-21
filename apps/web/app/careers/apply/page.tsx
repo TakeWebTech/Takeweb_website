@@ -132,7 +132,7 @@ function ApplyPageContent() {
                 <Loader2 className="animate-spin text-amber-500" size={42} />
               </div>
             ) : (
-              <Card3D className="p-8">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-2xl p-8">
                 <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
                   Your Details
                 </h2>
@@ -261,7 +261,7 @@ function ApplyPageContent() {
                     )}
                   </button>
                 </form>
-              </Card3D>
+              </div>
             )}
           </div>
         </div>
