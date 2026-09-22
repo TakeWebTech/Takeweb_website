@@ -46,7 +46,7 @@ services:
     volumes:
       - cms_uploads:/opt/app/public/uploads
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://127.0.0.1:1337/_health"]
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:1337/_health"]
       interval: 30s
       timeout: 5s
       start_period: 60s
