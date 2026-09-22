@@ -1,8 +1,8 @@
 # TakeWeb CMS
 
-This folder contains the Strapi schemas and components used by the TakeWeb
-public website. Production runs in the existing Coolify Strapi service at
-`https://cms.takeweb.in`.
+TakeWeb CMS is a Strapi 5 application deployed from this repository. Its schema
+is version-controlled under `cms/src`; content and uploads remain persistent in
+PostgreSQL and Docker volumes on the Coolify VPS.
 
 ## Content Types
 
@@ -17,45 +17,56 @@ public website. Production runs in the existing Coolify Strapi service at
 Draft/publish is disabled for the initial content types. Visibility uses the
 existing `isActive` and `isPublished` fields.
 
-## Existing Coolify Service
+## Create the Coolify Resource
 
-The Coolify service already owns its server configuration, environment,
-PostgreSQL database, and uploads. Do not replace or copy any of those settings.
+After deleting the old one-click service, create a new resource in the same
+Coolify project and environment:
 
-If an earlier migration copied repository config files into the service, remove
-only this mount from the Strapi service Compose definition and redeploy:
+1. Select **Private Repository (with GitHub App)**.
+2. Select `TakeWebTech/Takeweb_website` and branch `main`.
+3. Select the **Docker Compose** build pack.
+4. Set **Base Directory** to `/cms`.
+5. Set **Docker Compose Location** to `/docker-compose.coolify.yml`.
+6. Save the configuration.
+7. Assign `https://cms.takeweb.in:1337` to the `cms` service only.
+8. Keep the `postgres` service private with no domain or public port.
+9. Enable **Auto Deploy** for the `main` branch.
+10. Deploy.
 
-```yaml
-- "strapi-config:/opt/app/config"
+Coolify automatically generates the database credentials and Strapi secrets
+referenced by the Compose file. Do not add localhost URLs or mount `src` or
+`config` as persistent volumes.
+
+The stack persists only stateful data:
+
+- `cms_database`: PostgreSQL content, administrators, permissions, and tokens
+- `cms_uploads`: uploaded media
+
+The Strapi code, content types, components, and configuration are rebuilt from
+GitHub on every deployment.
+
+## Automatic Schema Deployment
+
+After Auto Deploy is enabled, the workflow is:
+
+```text
+Edit cms/src or cms/config
+-> commit
+-> push to main
+-> Coolify builds the CMS image
+-> Strapi starts with the updated schema
 ```
 
-This restores the stock Strapi image configuration. Do not remove the
-PostgreSQL or uploads volumes.
-
-To install or update only the TakeWeb schemas and their API files, open the
-Strapi container terminal and run:
-
-```sh
-set -eu
-rm -rf /tmp/takeweb-cms /tmp/takeweb-cms.tar.gz
-wget -qO /tmp/takeweb-cms.tar.gz \
-  https://github.com/TakeWebTech/Takeweb_website/archive/refs/heads/main.tar.gz
-mkdir -p /tmp/takeweb-cms
-tar -xzf /tmp/takeweb-cms.tar.gz -C /tmp/takeweb-cms --strip-components=1
-rm -rf /opt/app/src/api /opt/app/src/components
-cp -R /tmp/takeweb-cms/cms/src/api /opt/app/src/api
-cp -R /tmp/takeweb-cms/cms/src/components /opt/app/src/components
-```
-
-Restart the Strapi resource after copying the files. The database and uploaded
-media remain in their existing persistent volumes. This migration does not
-touch `/opt/app/config`, the admin application, server settings, environment
-variables, PostgreSQL, or `/opt/app/public/uploads`.
+PostgreSQL content and uploaded media remain intact during image replacement.
+Back up both persistent volumes before destructive schema changes.
 
 ## Seed Current Website Content
 
-After the schemas are visible, create a temporary full-access API token in
-Strapi and run from the repository root:
+After the first deployment:
+
+1. Open `https://cms.takeweb.in/admin` and create the first administrator.
+2. Create a temporary full-access API token.
+3. Run from the repository root:
 
 ```bash
 STRAPI_URL=https://cms.takeweb.in \
@@ -63,11 +74,11 @@ STRAPI_API_TOKEN=<temporary-write-token> \
 node scripts/seed-strapi.mjs
 ```
 
-Delete the write token after seeding and create a read-only token for Vercel.
+Delete the write token after seeding. Create a read-only API token for Vercel.
 
 ## Connect Vercel
 
-Configure these server-only variables in the Vercel project and redeploy:
+Set these server-only environment variables in Vercel and redeploy:
 
 ```dotenv
 STRAPI_URL=https://cms.takeweb.in
@@ -75,13 +86,20 @@ STRAPI_API_TOKEN=<read-only-token>
 ERP_BASE_URL=https://admin.takeweb.in
 ```
 
-Do not use `NEXT_PUBLIC_STRAPI_URL`; CMS credentials and requests remain on the
-Next.js server. `STRAPI_URL` is also read during the Vercel build so Next Image
-can allow media served from the CMS uploads path.
+Do not use `NEXT_PUBLIC_STRAPI_URL`. The browser does not receive the CMS token
+or call Strapi directly.
 
-## Refresh Fallback Content
+## Content Changes
 
-After important CMS content changes, refresh the checked-in fallback snapshot:
+Content editors can update entries directly in the Strapi admin. Those changes
+are saved in PostgreSQL and do not require a code deployment.
+
+Schema or component changes are made in this repository and deployed by pushing
+to `main`.
+
+## Refresh Website Fallback Content
+
+After important content updates:
 
 ```bash
 STRAPI_URL=https://cms.takeweb.in \
@@ -89,5 +107,5 @@ STRAPI_API_TOKEN=<read-only-token> \
 node scripts/sync-strapi-fallback.mjs
 ```
 
-Commit the generated fallback update so the latest known content remains
-available if Strapi is temporarily unavailable.
+Commit and push the generated fallback update so Vercel retains the latest
+known content if the CMS is temporarily unavailable.

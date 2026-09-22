@@ -1,5 +1,3 @@
-const { mergeConfig } = require("vite");
-
 module.exports = ({ env }) => ({
   auth: {
     secret: env("ADMIN_JWT_SECRET"),
@@ -15,15 +13,4 @@ module.exports = ({ env }) => ({
   secrets: {
     encryptionKey: env("ENCRYPTION_KEY"),
   },
-  vite: (config) =>
-    mergeConfig(config, {
-      server: {
-        host: "0.0.0.0",
-        port: 5173,
-        hmr: {
-          host: "localhost",
-          clientPort: 5173,
-        },
-      },
-    }),
 });

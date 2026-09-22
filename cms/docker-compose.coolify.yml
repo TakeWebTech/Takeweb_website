@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: takeweb_cms
+      POSTGRES_USER: ${SERVICE_USER_POSTGRES}
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_64_POSTGRES}
+    volumes:
+      - cms_database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  cms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVICE_URL_CMS_1337: /
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 1337
+      PUBLIC_URL: ${SERVICE_URL_CMS_1337}
+      APP_KEYS: ${SERVICE_BASE64_64_APP_KEY_1},${SERVICE_BASE64_64_APP_KEY_2},${SERVICE_BASE64_64_APP_KEY_3},${SERVICE_BASE64_64_APP_KEY_4}
+      API_TOKEN_SALT: ${SERVICE_BASE64_64_API_TOKEN_SALT}
+      ADMIN_JWT_SECRET: ${SERVICE_BASE64_64_ADMIN_JWT_SECRET}
+      TRANSFER_TOKEN_SALT: ${SERVICE_BASE64_64_TRANSFER_TOKEN_SALT}
+      JWT_SECRET: ${SERVICE_BASE64_64_JWT_SECRET}
+      ENCRYPTION_KEY: ${SERVICE_BASE64_64_ENCRYPTION_KEY}
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: takeweb_cms
+      DATABASE_USERNAME: ${SERVICE_USER_POSTGRES}
+      DATABASE_PASSWORD: ${SERVICE_PASSWORD_64_POSTGRES}
+      DATABASE_SSL: "false"
+    expose:
+      - "1337"
+    volumes:
+      - cms_uploads:/opt/app/public/uploads
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:1337/_health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
+
+volumes:
+  cms_database:
+  cms_uploads:
