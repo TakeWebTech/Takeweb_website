@@ -1,7 +1,12 @@
 import fs from "node:fs";
 
-const STRAPI_URL = (process.env.STRAPI_URL || "http://localhost:1337").replace(/\/$/, "");
+const STRAPI_URL = process.env.STRAPI_URL?.replace(/\/$/, "");
 const TOKEN = process.env.STRAPI_API_TOKEN;
+
+if (!STRAPI_URL) {
+  console.error("Missing STRAPI_URL. Set it to the deployed Strapi URL.");
+  process.exit(1);
+}
 
 if (!TOKEN) {
   console.error("Missing STRAPI_API_TOKEN. Create a Strapi read token before syncing fallback content.");

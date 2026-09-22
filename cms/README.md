@@ -17,21 +17,23 @@ public website. Production runs in the existing Coolify Strapi service at
 Draft/publish is disabled for the initial content types. Visibility uses the
 existing `isActive` and `isPublished` fields.
 
-## Local Docker
-
-From the repository root:
-
-```bash
-docker compose up cms
-```
-
-Open `http://localhost:1337/admin` and create the first administrator.
-
 ## Existing Coolify Service
 
-The Coolify service uses persistent volumes for `/opt/app/src`,
-`/opt/app/config`, PostgreSQL, and uploads. To install or update the TakeWeb
-schemas, open the Strapi container terminal and run:
+The Coolify service already owns its server configuration, environment,
+PostgreSQL database, and uploads. Do not replace or copy any of those settings.
+
+If an earlier migration copied repository config files into the service, remove
+only this mount from the Strapi service Compose definition and redeploy:
+
+```yaml
+- "strapi-config:/opt/app/config"
+```
+
+This restores the stock Strapi image configuration. Do not remove the
+PostgreSQL or uploads volumes.
+
+To install or update only the TakeWeb schemas and their API files, open the
+Strapi container terminal and run:
 
 ```sh
 set -eu
@@ -43,23 +45,12 @@ tar -xzf /tmp/takeweb-cms.tar.gz -C /tmp/takeweb-cms --strip-components=1
 rm -rf /opt/app/src/api /opt/app/src/components
 cp -R /tmp/takeweb-cms/cms/src/api /opt/app/src/api
 cp -R /tmp/takeweb-cms/cms/src/components /opt/app/src/components
-cp /tmp/takeweb-cms/cms/src/index.js /opt/app/src/index.js
-cp /tmp/takeweb-cms/cms/config/*.js /opt/app/config/
 ```
 
 Restart the Strapi resource after copying the files. The database and uploaded
-media remain in their existing persistent volumes.
-
-The Coolify Strapi service must also define:
-
-```dotenv
-PUBLIC_URL=https://cms.takeweb.in
-API_TOKEN_SALT=<stable-random-secret>
-TRANSFER_TOKEN_SALT=<stable-random-secret>
-ENCRYPTION_KEY=<stable-random-secret>
-```
-
-Keep these values stable between restarts.
+media remain in their existing persistent volumes. This migration does not
+touch `/opt/app/config`, the admin application, server settings, environment
+variables, PostgreSQL, or `/opt/app/public/uploads`.
 
 ## Seed Current Website Content
 

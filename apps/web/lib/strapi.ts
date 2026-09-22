@@ -1,9 +1,6 @@
 import { fallbackSitePages, type CmsPage } from "@/content/site-pages";
 
-const STRAPI_URL = (
-    process.env.STRAPI_URL ||
-    "http://localhost:1337"
-).replace(/\/$/, "");
+const STRAPI_URL = process.env.STRAPI_URL?.replace(/\/$/, "") || "";
 
 type StrapiMedia = string | { url?: string; alternativeText?: string; data?: { attributes?: { url?: string } } } | null | undefined;
 type TextListValue = string[] | { text?: string }[] | null | undefined;
@@ -33,6 +30,7 @@ function getTextList(value: TextListValue) {
 }
 
 async function strapiSingle<T>(path: string, revalidate = 1800): Promise<T | null> {
+    if (!STRAPI_URL) return null;
     try {
         const token = process.env.STRAPI_API_TOKEN;
         const res = await fetch(`${STRAPI_URL}/api/${path.replace(/^\//, "")}`, {
@@ -51,6 +49,7 @@ async function strapiSingle<T>(path: string, revalidate = 1800): Promise<T | nul
 }
 
 async function strapiFetch<T>(path: string, revalidate = 1800): Promise<T[]> {
+    if (!STRAPI_URL) return [];
     try {
         const token = process.env.STRAPI_API_TOKEN;
         const res = await fetch(`${STRAPI_URL}/api/${path.replace(/^\//, "")}`, {
