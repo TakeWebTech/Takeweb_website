@@ -27,7 +27,7 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: 1337
-      PUBLIC_URL: ${SERVICE_URL_CMS_1337}
+      PUBLIC_URL: https://cms.takeweb.in
       APP_KEYS: ${SERVICE_BASE64_64_KEY}
       API_TOKEN_SALT: ${SERVICE_BASE64_64_API_TOKEN_SALT}
       ADMIN_JWT_SECRET: ${SERVICE_BASE64_64_ADMIN_JWT_SECRET}
