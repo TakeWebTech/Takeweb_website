@@ -1,8 +1,13 @@
-module.exports = ({ env }) => ({
-  host: env("HOST", "0.0.0.0"),
-  port: env.int("PORT", 1337),
-  url: env("PUBLIC_URL", "http://localhost:1337"),
-  app: {
-    keys: env.array("APP_KEYS"),
-  },
-});
+module.exports = ({ env }) => {
+  const publicUrl = env("PUBLIC_URL");
+
+  return {
+    host: env("HOST", "0.0.0.0"),
+    port: env.int("PORT", 1337),
+    ...(publicUrl ? { url: publicUrl } : {}),
+    proxy: true,
+    app: {
+      keys: env.array("APP_KEYS"),
+    },
+  };
+};
