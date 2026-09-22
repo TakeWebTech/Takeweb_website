@@ -1,3 +1,22 @@
+import process from "node:process";
+
+const strapiImagePattern = (() => {
+  if (!process.env.STRAPI_URL) return null;
+
+  try {
+    const url = new URL(process.env.STRAPI_URL);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return {
+      protocol: url.protocol.slice(0, -1),
+      hostname: url.hostname,
+      port: url.port,
+      pathname: "/uploads/**",
+    };
+  } catch {
+    return null;
+  }
+})();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable standalone output for Railway/Docker deployment
@@ -26,6 +45,7 @@ const nextConfig = {
         hostname: "localhost",
         pathname: "/uploads/**",
       },
+      ...(strapiImagePattern ? [strapiImagePattern] : []),
     ],
   },
 
@@ -36,14 +56,6 @@ const nextConfig = {
 
   // Compression
   compress: true,
-
-  // Environment variables available at build time
-  env: {
-    NEXT_PUBLIC_API_URL:
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000",
-    NEXT_PUBLIC_STRAPI_URL:
-      process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337",
-  },
 
   // Headers for security
   async headers() {
