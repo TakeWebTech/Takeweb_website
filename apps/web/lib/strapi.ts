@@ -1,6 +1,6 @@
 import { fallbackSitePages, type CmsPage } from "@/content/site-pages";
 
-const STRAPI_URL = process.env.STRAPI_URL?.replace(/\/$/, "") || "";
+const STRAPI_URL = (process.env.STRAPI_URL || "https://cms.takeweb.in").replace(/\/$/, "");
 
 type StrapiMedia = string | { url?: string; alternativeText?: string; data?: { attributes?: { url?: string } } } | null | undefined;
 type TextListValue = string[] | { text?: string }[] | null | undefined;
@@ -575,7 +575,7 @@ export async function getServiceBySlug(slug: string) {
 }
 
 export async function getBlogPosts() {
-    const posts = await strapiFetch<SiteBlogPost>("blog-posts?sort=publishedAt:desc&populate=*", 1800);
+    const posts = await strapiFetch<SiteBlogPost>("blog-posts?sort=publishedAt:desc&populate=*", 60);
 
     return posts
         .filter((post) => post.isPublished !== false)

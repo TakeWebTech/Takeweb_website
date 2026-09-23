@@ -1,3 +1,5 @@
+import fs from "node:fs";
+
 const STRAPI_URL = process.env.STRAPI_URL?.replace(/\/$/, "");
 const TOKEN = process.env.STRAPI_API_TOKEN;
 
@@ -12,6 +14,26 @@ if (!TOKEN) {
 }
 
 const textItems = (items) => items.map((text) => ({ text }));
+
+function loadFallbackSitePages() {
+    const source = fs.readFileSync("apps/web/content/site-pages.ts", "utf8");
+    const declaration = "export const fallbackSitePages: CmsPage[] = ";
+    const start = source.indexOf(declaration);
+
+    if (start === -1) {
+        throw new Error("Could not find fallbackSitePages in apps/web/content/site-pages.ts");
+    }
+
+    const expression = source.slice(start + declaration.length).trim().replace(/;$/, "");
+    const pages = Function(`"use strict"; return (${expression});`)();
+
+    return pages.map((page) => ({
+        ...page,
+        hero: page.hero ? { ...page.hero, image: undefined } : undefined,
+    }));
+}
+
+const sitePages = loadFallbackSitePages();
 
 const services = [
     {
@@ -405,7 +427,37 @@ async function createEntry(collection, data) {
     }
 }
 
+async function findEntry(collection, slug) {
+    const params = new URLSearchParams({
+        "filters[slug][$eq]": slug,
+        "pagination[pageSize]": "1",
+    });
+    const res = await fetch(`${STRAPI_URL}/api/${collection}?${params}`, {
+        headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+
+    if (!res.ok) {
+        throw new Error(`${collection}/${slug}: ${res.status} ${await res.text()}`);
+    }
+
+    const json = await res.json();
+    return Array.isArray(json.data) && json.data.length > 0;
+}
+
 async function updateSingle(path, data) {
+    const current = await fetch(`${STRAPI_URL}/api/${path}`, {
+        headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+
+    if (current.ok && (await current.json()).data) {
+        console.log(`Kept existing ${path}`);
+        return;
+    }
+
+    if (current.status !== 404) {
+        throw new Error(`${path}: ${current.status} ${await current.text()}`);
+    }
+
     const res = await fetch(`${STRAPI_URL}/api/${path}`, {
         method: "PUT",
         headers: {
@@ -426,6 +478,10 @@ async function updateSingle(path, data) {
 async function seed(collection, rows) {
     for (const row of rows) {
         try {
+            if (row.slug && await findEntry(collection, row.slug)) {
+                console.log(`Kept existing ${collection}: ${row.title}`);
+                continue;
+            }
             await createEntry(collection, row);
             console.log(`Created ${collection}: ${row.title}`);
         } catch (error) {
@@ -439,4 +495,4 @@ await updateSingle("home-page", homePage);
 await seed("services", services);
 await seed("blog-posts", blogPosts);
 await seed("projects", projects);
-await seed("jobs", jobs);
+await seed("site-pages", sitePages);
