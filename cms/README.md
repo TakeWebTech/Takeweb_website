@@ -83,6 +83,7 @@ Set these server-only environment variables in Vercel and redeploy:
 ```dotenv
 STRAPI_URL=https://cms.takeweb.in
 STRAPI_API_TOKEN=<read-only-token>
+STRAPI_REVALIDATE_SECRET=<long-random-secret>
 ERP_BASE_URL=https://admin.takeweb.in
 ```
 
@@ -93,6 +94,23 @@ or call Strapi directly.
 
 Content editors can update entries directly in the Strapi admin. Those changes
 are saved in PostgreSQL and do not require a code deployment.
+
+## Clear the Website Cache on Save
+
+Generate a secret and add it to the Vercel Production environment as
+`STRAPI_REVALIDATE_SECRET`. Redeploy the website once after adding it.
+
+In Strapi, open **Settings -> Webhooks** and create a webhook with:
+
+- Name: `TakeWeb website cache`
+- URL: `https://takeweb.in/api/revalidate`
+- Header: `x-revalidate-secret: <the same secret>`
+- Events: entry create, update, delete, publish, and unpublish
+
+Each selected Strapi content event then clears the Next.js route cache. A
+successful webhook response is `200` with `Cache cleared.` Cloudflare should
+remain in its normal proxy mode; do not add a Cache Everything rule for website
+HTML, because that would introduce a second independent page cache.
 
 Schema or component changes are made in this repository and deployed by pushing
 to `main`.
