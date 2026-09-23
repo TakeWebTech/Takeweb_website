@@ -36,7 +36,7 @@ async function strapiSingle<T>(path: string, revalidate = 1800): Promise<T | nul
         const res = await fetch(`${STRAPI_URL}/api/${path.replace(/^\//, "")}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
             next: { revalidate },
-            signal: AbortSignal.timeout(10000),
+            signal: AbortSignal.timeout(20000),
         });
 
         if (!res.ok) return null;
@@ -55,7 +55,7 @@ async function strapiFetch<T>(path: string, revalidate = 1800): Promise<T[]> {
         const res = await fetch(`${STRAPI_URL}/api/${path.replace(/^\//, "")}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
             next: { revalidate },
-            signal: AbortSignal.timeout(10000),
+            signal: AbortSignal.timeout(20000),
         });
 
         if (!res.ok) return [];
@@ -507,7 +507,22 @@ export async function getGlobalContent() {
 }
 
 export async function getHomePageContent() {
-    const homePage = await strapiSingle<HomePageContent>("home-page?populate[hero][populate]=*&populate[partnerSlider][populate][tiles]=*&populate[stats][populate]=*&populate[servicesHeading][populate]=*&populate[services][populate]=*&populate[whyTakeWeb][populate][features]=*&populate[testimonialsHeading][populate]=*&populate[testimonials][populate]=*&populate[cta][populate]=*", 1800);
+    const [base, hero, partnerSlider, whyTakeWeb, testimonials, cta] = await Promise.all([
+        strapiSingle<HomePageContent>("home-page?populate=*", 60),
+        strapiSingle<HomePageContent>("home-page?populate[hero][populate]=*", 60),
+        strapiSingle<HomePageContent>("home-page?populate[partnerSlider][populate][tiles]=*", 60),
+        strapiSingle<HomePageContent>("home-page?populate[whyTakeWeb][populate][features]=*", 60),
+        strapiSingle<HomePageContent>("home-page?populate[testimonials][populate]=*", 60),
+        strapiSingle<HomePageContent>("home-page?populate[cta][populate]=*", 60),
+    ]);
+    const homePage = base ? {
+        ...base,
+        hero: hero?.hero || base.hero,
+        partnerSlider: partnerSlider?.partnerSlider || base.partnerSlider,
+        whyTakeWeb: whyTakeWeb?.whyTakeWeb || base.whyTakeWeb,
+        testimonials: testimonials?.testimonials || base.testimonials,
+        cta: cta?.cta || base.cta,
+    } : null;
     if (!homePage) return defaultHomePageContent;
 
     return {
