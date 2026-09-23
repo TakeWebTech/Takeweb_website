@@ -27,6 +27,11 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "cms.takeweb.in",
+        pathname: "/uploads/**",
+      },
+      {
+        protocol: "https",
         hostname: "res.cloudinary.com",
         pathname: "/**",
       },
