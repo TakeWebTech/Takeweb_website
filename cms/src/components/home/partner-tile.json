@@ -8,12 +8,10 @@
       "type": "string",
       "required": true
     },
-    "icon": {
-      "type": "string",
-      "default": "cloud"
-    },
-    "href": {
-      "type": "string"
+    "logo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
     }
   }
 }

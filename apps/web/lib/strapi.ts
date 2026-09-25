@@ -237,7 +237,7 @@ export interface HomePageContent {
     };
     partnerSlider?: {
         eyebrow?: string;
-        tiles?: { name: string; icon?: string }[];
+        tiles?: { name: string; logo?: StrapiMedia }[];
     };
     stats?: { value: number; suffix?: string; label: string }[];
     servicesHeading?: { overline?: string; title: string; titleHighlight?: string; description?: string };
@@ -306,19 +306,19 @@ export const defaultHomePageContent: HomePageContent = {
     partnerSlider: {
         eyebrow: "Trusted by leading enterprises & powered by world-class technology",
         tiles: [
-            { name: "AWS", icon: "cloud" },
-            { name: "Google Cloud", icon: "database" },
-            { name: "Microsoft Azure", icon: "server" },
-            { name: "Oracle", icon: "shield" },
-            { name: "Salesforce", icon: "globe" },
-            { name: "SAP", icon: "cpu" },
-            { name: "IBM", icon: "activity" },
-            { name: "Red Hat", icon: "box" },
-            { name: "TechVentures", icon: "layers" },
-            { name: "DataFlow", icon: "hexagon" },
-            { name: "InnovateCorp", icon: "triangle" },
-            { name: "GlobalStack", icon: "circle" },
-            { name: "PeakSystems", icon: "globe2" },
+            { name: "AWS" },
+            { name: "Google Cloud" },
+            { name: "Microsoft Azure" },
+            { name: "Oracle" },
+            { name: "Salesforce" },
+            { name: "SAP" },
+            { name: "IBM" },
+            { name: "Red Hat" },
+            { name: "TechVentures" },
+            { name: "DataFlow" },
+            { name: "InnovateCorp" },
+            { name: "GlobalStack" },
+            { name: "PeakSystems" },
         ],
     },
     stats: [
@@ -525,7 +525,7 @@ export async function getHomePageContent() {
     const [base, hero, partnerSlider, whyTakeWeb, testimonials, cta] = await Promise.all([
         strapiSingle<HomePageContent>("home-page?populate=*", 60),
         strapiSingle<HomePageContent>("home-page?populate[hero][populate]=*", 60),
-        strapiSingle<HomePageContent>("home-page?populate[partnerSlider][populate][tiles]=*", 60),
+        strapiSingle<HomePageContent>("home-page?populate[partnerSlider][populate][tiles][populate][logo]=*", 60),
         strapiSingle<HomePageContent>("home-page?populate[whyTakeWeb][populate][features]=*", 60),
         strapiSingle<HomePageContent>("home-page?populate[testimonials][populate]=*", 60),
         strapiSingle<HomePageContent>("home-page?populate[cta][populate]=*", 60),
@@ -544,7 +544,14 @@ export async function getHomePageContent() {
         ...defaultHomePageContent,
         ...homePage,
         hero: { ...defaultHomePageContent.hero, ...homePage.hero },
-        partnerSlider: { ...defaultHomePageContent.partnerSlider, ...homePage.partnerSlider },
+        partnerSlider: {
+            ...defaultHomePageContent.partnerSlider,
+            ...homePage.partnerSlider,
+            tiles: homePage.partnerSlider?.tiles?.map((tile) => ({
+                ...tile,
+                logo: getMediaUrl(tile.logo),
+            })) || defaultHomePageContent.partnerSlider?.tiles,
+        },
         stats: homePage.stats?.length ? homePage.stats : defaultHomePageContent.stats,
         servicesHeading: { ...defaultHomePageContent.servicesHeading, ...homePage.servicesHeading },
         services: homePage.services?.length ? homePage.services : defaultHomePageContent.services,

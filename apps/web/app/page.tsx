@@ -122,11 +122,12 @@ export default async function HomePage() {
                     <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[var(--bg-secondary)] to-transparent z-10 pointer-events-none" />
                     <div className="flex items-center gap-16 animate-marquee" style={{ width: "max-content" }}>
                         {[...(partnerSlider.tiles || []), ...(partnerSlider.tiles || [])].map((partner, index) => {
-                            const Icon = getIcon(partner.icon);
                             return (
                                 <div key={`${partner.name}-${index}`} className="flex items-center justify-center h-12 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
                                     <div className="flex items-center gap-3 text-[var(--text-muted)] group">
-                                        <Icon size={30} className="text-[var(--text-secondary)] group-hover:text-amber-500 transition-colors" />
+                                        {typeof partner.logo === "string" && partner.logo && (
+                                            <Image src={partner.logo} alt="" width={40} height={40} className="h-10 w-10 object-contain" />
+                                        )}
                                         <span className="text-xl font-bold whitespace-nowrap tracking-tight">{partner.name}</span>
                                     </div>
                                 </div>

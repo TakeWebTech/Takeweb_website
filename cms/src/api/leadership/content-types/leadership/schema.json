@@ -37,7 +37,7 @@
     },
     "socialMedia": {
       "type": "component",
-      "component": "home.partner-tile",
+      "component": "shared.social-media",
       "repeatable": true
     },
     "sortOrder": {

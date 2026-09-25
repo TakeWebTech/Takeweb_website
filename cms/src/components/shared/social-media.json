@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_shared_social_media",
+  "info": {
+    "displayName": "Social Media",
+    "description": "Reusable social profile link"
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "icon": {
+      "type": "string",
+      "default": "website"
+    },
+    "href": {
+      "type": "string",
+      "required": true
+    }
+  }
+}
