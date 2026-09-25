@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { ErpApplicationField, ErpJob } from "@/lib/careers";
+import {
+  isValidDynamicQuestionKey,
+  type ErpApplicationField,
+  type ErpJob,
+} from "@/lib/careers";
 
 type RouteContext = { params: Promise<{ path?: string[] }> };
 type FrappeResponse<T> = { message?: T; _server_messages?: string };
@@ -78,7 +82,11 @@ function getFrappeErrorMessage(raw: string) {
   }
 }
 
-async function callErp<T>(method: string, body?: Record<string, unknown>) {
+async function callErp<T>(
+  method: string,
+  body?: Record<string, unknown>,
+  noStore = false,
+) {
   const baseUrl = erpBaseUrl();
   if (!baseUrl) {
     return {
@@ -91,7 +99,9 @@ async function callErp<T>(method: string, body?: Record<string, unknown>) {
       method: body ? "POST" : "GET",
       headers: body ? { "Content-Type": "application/json" } : undefined,
       body: body ? JSON.stringify(body) : undefined,
-      ...(body ? { cache: "no-store" as const } : { next: { revalidate: 60 } }),
+      ...(body || noStore
+        ? { cache: "no-store" as const }
+        : { next: { revalidate: 60 } }),
       signal: AbortSignal.timeout(body ? 60000 : 30000),
     });
     const raw = await response.text();
@@ -156,6 +166,12 @@ function formString(form: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function hasMalformedDynamicField(fields: ErpApplicationField[]) {
+  return fields.some(
+    (field) => !field.system && !isValidDynamicQuestionKey(field.key),
+  );
+}
+
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { path = [] } = await context.params;
 
@@ -192,12 +208,20 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     if (!id) return errorResponse("Job not found.", 404);
     const result = await callErp<JobMessage>(
       `get_job?job=${encodeURIComponent(id)}`,
+      undefined,
+      true,
     );
-    const fields = result.data?.application_form?.fields;
     if (result.error) return result.error;
+    const fields = result.data?.application_form?.fields;
     if (!result.data?.job?.id || !Array.isArray(fields)) {
       return errorResponse(
         "ERPNext returned an unexpected application form response.",
+        502,
+      );
+    }
+    if (hasMalformedDynamicField(fields)) {
+      return errorResponse(
+        "Application form configuration error. Please refresh and try again.",
         502,
       );
     }
@@ -242,13 +266,67 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   const answersRaw = formString(application, "answers") || "{}";
+
+  let answers: Record<string, unknown>;
   try {
-    const answers = JSON.parse(answersRaw) as unknown;
-    if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
+    const parsed = JSON.parse(answersRaw) as unknown;
+
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed) ||
+      Object.getPrototypeOf(parsed) !== Object.prototype
+    ) {
       throw new Error("Invalid answers");
     }
+
+    answers = parsed as Record<string, unknown>;
   } catch {
     return errorResponse("Application answers are invalid.", 400);
+  }
+
+  if (
+    Object.keys(answers).some((key) => !isValidDynamicQuestionKey(key))
+  ) {
+    return errorResponse(
+      "The application form has changed. Please refresh the page and try again.",
+      409,
+    );
+  }
+
+  const schemaResult = await callErp<JobMessage>(
+    `get_job?job=${encodeURIComponent(jobId)}`,
+    undefined,
+    true,
+  );
+
+  if (schemaResult.error) return schemaResult.error;
+
+  const currentFields = schemaResult.data?.application_form?.fields;
+  if (!Array.isArray(currentFields)) {
+    return errorResponse("Unable to validate the application form.", 502);
+  }
+  if (hasMalformedDynamicField(currentFields)) {
+    return errorResponse(
+      "The application form has changed. Please refresh the page and try again.",
+      409,
+    );
+  }
+
+  const validQuestionKeys = new Set(
+    currentFields
+      .filter(
+        (field) =>
+          !field.system && isValidDynamicQuestionKey(field.key),
+      )
+      .map((field) => field.key),
+  );
+
+  if (Object.keys(answers).some((key) => !validQuestionKeys.has(key))) {
+    return errorResponse(
+      "The application form has changed. Please refresh the page and try again.",
+      409,
+    );
   }
 
   const erpForm = new FormData();
@@ -259,7 +337,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   erpForm.append("country", formString(application, "country"));
   erpForm.append("cover_letter", formString(application, "cover_letter"));
   erpForm.append("source", formString(application, "source"));
-  erpForm.append("answers", answersRaw);
+  erpForm.append("answers", JSON.stringify(answers));
   erpForm.append("resume", resume, resume.name);
 
   const result = await callErpMultipart<ApplicationMessage>(

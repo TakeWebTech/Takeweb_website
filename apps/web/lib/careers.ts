@@ -48,6 +48,15 @@ export type ErpApplicationForm = {
   fields: ErpApplicationField[];
 };
 
+export function isValidDynamicQuestionKey(key: unknown): key is string {
+  return (
+    typeof key === "string" &&
+    key === key.trim() &&
+    key !== "null" &&
+    key.startsWith("q_")
+  );
+}
+
 export function careersApi(path = "") {
   return `/api/careers${path}`;
 }

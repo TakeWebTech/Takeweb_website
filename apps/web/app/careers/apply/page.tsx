@@ -22,12 +22,15 @@ import {
   careersApi,
   ErpApplicationField,
   ErpJob,
+  isValidDynamicQuestionKey,
   responseError,
 } from "@/lib/careers";
 
 type FormValues = Record<string, ApplicationFieldValue>;
 const MAX_RESUME_SIZE = 5 * 1024 * 1024;
 const RESUME_EXTENSIONS = ["pdf", "doc", "docx"];
+const FORM_CONFIGURATION_ERROR =
+  "Application form configuration error. Please refresh and try again.";
 const CORE_FIELD_ORDER = [
   "applicant_name",
   "email_id",
@@ -106,11 +109,24 @@ function ApplyPageContent() {
         const schemaFields = Array.isArray(data.fields)
           ? (data.fields as ErpApplicationField[])
           : [];
+        if (
+          schemaFields.some(
+            (field) =>
+              !field.system && !isValidDynamicQuestionKey(field.key),
+          )
+        ) {
+          throw new Error(FORM_CONFIGURATION_ERROR);
+        }
         setJob(data.job);
         setFields(schemaFields);
         setValues(
           Object.fromEntries(
-            schemaFields.map((field) => [field.key, emptyValue(field)]),
+            schemaFields
+              .filter(
+                (field) =>
+                  field.system || isValidDynamicQuestionKey(field.key),
+              )
+              .map((field) => [field.key, emptyValue(field)]),
           ),
         );
       })
@@ -223,6 +239,15 @@ function ApplyPageContent() {
       ? additionalFields
       : coreFields;
     if (!jobId || !agreed || !validate(visibleFields)) return;
+
+    if (
+      additionalFields.some(
+        (field) => !isValidDynamicQuestionKey(field.key),
+      )
+    ) {
+      setSubmitStatus({ type: "error", message: FORM_CONFIGURATION_ERROR });
+      return;
+    }
 
     const answers = Object.fromEntries(
       additionalFields.map((field) => [field.key, values[field.key] ?? ""]),
