@@ -6,6 +6,11 @@ module.exports = ({ env }) => {
     port: env.int("PORT", 1337),
     ...(publicUrl ? { url: publicUrl } : {}),
     proxy: true,
+    transfer: {
+      remote: {
+        enabled: true,
+      },
+    },
     app: {
       keys: env.array("APP_KEYS"),
     },
