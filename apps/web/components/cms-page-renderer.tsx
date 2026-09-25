@@ -85,6 +85,11 @@ function getIcon(name?: string) {
     return iconMap[(name || "target").toLowerCase() as keyof typeof iconMap] || Target;
 }
 
+function getSocialIcon(name?: string) {
+    const socialIcons = { linkedin: Linkedin, twitter: Twitter, instagram: Instagram, github: Github, website: Globe };
+    return socialIcons[(name || "website").toLowerCase() as keyof typeof socialIcons] || Globe;
+}
+
 function gridClass(columns?: unknown) {
     if (columns === 1) return "grid gap-6 max-w-3xl mx-auto";
     if (columns === 2) return "grid md:grid-cols-2 gap-8";
@@ -181,14 +186,26 @@ export function CmsPageRenderer({ page }: { page: SitePageContent }) {
                                 {heading?.title && <SectionHeader overline={heading.overline} title={heading.title} titleHighlight={heading.titleHighlight} description={heading.description} />}
                                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {people.map((person) => (
-                                        <button key={person.uid || person.name} onClick={() => setSelectedPerson(person)} className="text-left group">
-                                            <Card3D className="text-center overflow-hidden p-0">
-                                                <div className="relative aspect-square">
+                                        <button key={person.uid || person.name} onClick={() => setSelectedPerson(person)} className="h-full text-left group">
+                                            <Card3D tiltAmount={0} glareEnabled={false} className="h-full text-center overflow-hidden p-0">
+                                                <div className="relative w-full aspect-square overflow-hidden">
                                                     <Image src={person.image || person.imageFallback || "/founder.jpg"} alt={person.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                                                 </div>
-                                                <div className="p-6">
-                                                    <h4 className="font-semibold text-[var(--text-primary)] group-hover:text-amber-500 transition-colors">{person.name}</h4>
-                                                    <p className="text-sm text-[var(--text-tertiary)]">{person.role}</p>
+                                                <div className="flex min-h-36 flex-col items-center justify-center p-6">
+                                                    <h4 className="flex min-h-14 items-center justify-center font-semibold text-[var(--text-primary)] group-hover:text-amber-500 transition-colors">{person.name}</h4>
+                                                    <p className="min-h-10 text-sm text-[var(--text-tertiary)]">{person.role}</p>
+                                                    {!!person.socialMedia?.length && (
+                                                        <div className="mt-3 flex min-h-8 items-center justify-center gap-2" aria-label={`${person.name} social media`}>
+                                                            {person.socialMedia.map((social) => {
+                                                                const SocialIcon = getSocialIcon(social.icon);
+                                                                return (
+                                                                    <span key={`${social.name}-${social.href}`} title={social.name} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--border-primary)] text-[var(--text-tertiary)]">
+                                                                        <SocialIcon size={16} />
+                                                                    </span>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </Card3D>
                                         </button>
@@ -332,11 +349,11 @@ export function CmsPageRenderer({ page }: { page: SitePageContent }) {
 
             {selectedPerson && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setSelectedPerson(null)}>
-                    <div className="relative max-w-2xl w-full bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-3xl shadow-2xl overflow-hidden" onClick={(event) => event.stopPropagation()}>
+                    <div className="relative w-full max-w-3xl bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-3xl shadow-2xl overflow-hidden" onClick={(event) => event.stopPropagation()}>
                         <button onClick={() => setSelectedPerson(null)} className="absolute top-4 right-4 z-10 p-2 rounded-full bg-[var(--bg-tertiary)]"><X size={20} /></button>
-                        <div className="grid md:grid-cols-2">
-                            <div className="relative aspect-square"><Image src={selectedPerson.image || selectedPerson.imageFallback || "/founder.jpg"} alt={selectedPerson.name} fill className="object-cover" /></div>
-                            <div className="p-8">
+                        <div className="grid md:min-h-[430px] md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                            <div className="relative aspect-square w-full md:aspect-auto md:min-h-[430px]"><Image src={selectedPerson.image || selectedPerson.imageFallback || "/founder.jpg"} alt={selectedPerson.name} fill className="object-cover" /></div>
+                            <div className="flex min-w-0 flex-col justify-center p-8 pr-14">
                                 <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-1">{selectedPerson.name}</h3>
                                 <p className="text-amber-500 font-medium mb-6">{selectedPerson.role}</p>
                                 <p className="text-[var(--text-tertiary)] mb-6 leading-relaxed">{selectedPerson.bio}</p>
@@ -357,8 +374,7 @@ export function CmsPageRenderer({ page }: { page: SitePageContent }) {
 
 function SocialTile({ social }: { social: { name: string; icon?: string; href?: string } }) {
     if (!social.href || !/^https?:\/\//i.test(social.href)) return null;
-    const socialIcons = { linkedin: Linkedin, twitter: Twitter, instagram: Instagram, github: Github, website: Globe };
-    const Icon = socialIcons[(social.icon || "website").toLowerCase() as keyof typeof socialIcons] || Globe;
+    const Icon = getSocialIcon(social.icon);
 
     return (
         <a

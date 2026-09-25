@@ -33,7 +33,7 @@ export function Card3D({
         const rotateX = ((y - centerY) / centerY) * -tiltAmount;
         const rotateY = ((x - centerX) / centerX) * tiltAmount;
 
-        setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`);
+        setTransform(tiltAmount > 0 ? `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)` : "");
         setGlarePosition({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
     };
 
