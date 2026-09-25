@@ -196,23 +196,6 @@ export interface SiteProject {
     isActive?: boolean;
 }
 
-export interface SiteJob {
-    id: string | number;
-    title: string;
-    slug: string;
-    department: string;
-    location: string;
-    type: string;
-    minSalary?: number;
-    maxSalary?: number;
-    description: string;
-    requirements?: string;
-    benefits?: TextListValue;
-    deadline?: string;
-    isRemote?: boolean;
-    isActive?: boolean;
-}
-
 export interface GlobalLink {
     name: string;
     href: string;
@@ -274,6 +257,42 @@ export interface HomePageContent {
         primaryCta?: { label: string; href: string; variant?: string };
         secondaryCta?: { label: string; href: string; variant?: string };
     };
+}
+
+interface LeadershipContent {
+    id: string | number;
+    documentId?: string;
+    name: string;
+    slug: string;
+    position: string;
+    photo?: StrapiMedia;
+    description?: string;
+    email?: string;
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+    github?: string;
+    website?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+}
+
+interface CompanyContent {
+    pageTitle: string;
+    seoTitle?: string;
+    seoDescription?: string;
+    hero?: SitePageContent["hero"];
+    missionVisionHeading?: Record<string, unknown>;
+    mission?: Record<string, unknown>;
+    vision?: Record<string, unknown>;
+    valuesHeading?: Record<string, unknown>;
+    values?: Array<Record<string, unknown>>;
+    leadershipHeading?: Record<string, unknown>;
+    leaders?: LeadershipContent[];
+    journeyHeading?: Record<string, unknown>;
+    milestones?: Array<Record<string, unknown>>;
+    cta?: Record<string, unknown>;
+    isActive?: boolean;
 }
 
 export type SitePageContent = CmsPage;
@@ -565,6 +584,81 @@ export async function getSitePage(slug: string) {
     return fallbackSitePages.find((item) => item.slug === slug) || null;
 }
 
+export async function getCompanyPage(): Promise<SitePageContent | null> {
+    const company = await strapiSingle<CompanyContent>(
+        "company?populate[hero][populate]=*&populate[missionVisionHeading]=*&populate[mission]=*&populate[vision]=*&populate[valuesHeading]=*&populate[values]=*&populate[leadershipHeading]=*&populate[leaders][populate][photo]=*&populate[journeyHeading]=*&populate[milestones]=*&populate[cta][populate]=*",
+        60,
+    );
+
+    if (!company || company.isActive === false) {
+        return fallbackSitePages.find((item) => item.slug === "about") || null;
+    }
+
+    const leaders = (company.leaders || [])
+        .filter((leader) => leader.isActive !== false)
+        .sort((first, second) => (first.sortOrder || 0) - (second.sortOrder || 0))
+        .map((leader) => ({
+            uid: leader.slug,
+            name: leader.name,
+            role: leader.position,
+            image: getMediaUrl(leader.photo),
+            imageFallback: "/founder.jpg",
+            bio: leader.description,
+            email: leader.email,
+            linkedin: leader.linkedin,
+            twitter: leader.twitter,
+            instagram: leader.instagram,
+            github: leader.github,
+            website: leader.website,
+        }));
+
+    const sections: Array<Record<string, unknown>> = [
+        {
+            __component: "page.card-grid-section",
+            heading: company.missionVisionHeading,
+            background: "secondary",
+            columns: 2,
+            cards: [company.mission, company.vision].filter(Boolean),
+        },
+        {
+            __component: "page.card-grid-section",
+            heading: company.valuesHeading,
+            background: "default",
+            columns: 4,
+            cards: company.values || [],
+        },
+        {
+            __component: "page.people-section",
+            heading: company.leadershipHeading,
+            background: "secondary",
+            people: leaders,
+        },
+        {
+            __component: "page.timeline-section",
+            heading: company.journeyHeading,
+            items: company.milestones || [],
+        },
+    ];
+
+    if (company.cta) {
+        sections.push({ __component: "home.cta-section", ...company.cta });
+    }
+
+    return {
+        title: company.pageTitle,
+        slug: "about",
+        path: "/about",
+        seoTitle: company.seoTitle,
+        seoDescription: company.seoDescription,
+        hero: company.hero ? {
+            ...company.hero,
+            image: getMediaUrl(company.hero.image) || company.hero.image || "/founder.jpg",
+        } : undefined,
+        sections,
+        isActive: company.isActive,
+    };
+}
+
 export async function getServices() {
     const services = await strapiFetch<SiteService>("services?sort=sortOrder:asc&populate=*", 3600);
     const rows = services.length ? services : defaultServices;
@@ -611,15 +705,5 @@ export async function getProjects() {
             ...project,
             coverImage: getMediaUrl(project.coverImage),
             technologies: getTextList(project.technologies),
-        }));
-}
-
-export async function getJobs() {
-    const jobs = await strapiFetch<SiteJob>("jobs?sort=title:asc&populate=*", 900);
-    return jobs
-        .filter((job) => job.isActive !== false)
-        .map((job) => ({
-            ...job,
-            benefits: getTextList(job.benefits),
         }));
 }

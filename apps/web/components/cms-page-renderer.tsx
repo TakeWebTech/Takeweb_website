@@ -21,9 +21,12 @@ import {
     Eye,
     FileCheck,
     Globe,
+    Github,
     Handshake,
     Heart,
+    Instagram,
     Lightbulb,
+    Linkedin,
     Lock,
     Mail,
     MapPin,
@@ -33,6 +36,7 @@ import {
     Server,
     Shield,
     Target,
+    Twitter,
     Users,
     X,
     Zap,
@@ -66,7 +70,6 @@ const iconMap = {
     zap: Zap,
 };
 
-type CmsSection = NonNullable<SitePageContent["sections"]>[number];
 type Person = {
     uid?: string;
     name: string;
@@ -77,6 +80,9 @@ type Person = {
     email?: string;
     linkedin?: string;
     twitter?: string;
+    instagram?: string;
+    github?: string;
+    website?: string;
 };
 
 function getIcon(name?: string) {
@@ -338,13 +344,35 @@ export function CmsPageRenderer({ page }: { page: SitePageContent }) {
                                 <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-1">{selectedPerson.name}</h3>
                                 <p className="text-amber-500 font-medium mb-6">{selectedPerson.role}</p>
                                 <p className="text-[var(--text-tertiary)] mb-6 leading-relaxed">{selectedPerson.bio}</p>
-                                {selectedPerson.email && <a href={`mailto:${selectedPerson.email}`} className="text-amber-500">{selectedPerson.email}</a>}
+                                {selectedPerson.email && <a href={`mailto:${selectedPerson.email}`} className="text-amber-500 hover:underline">{selectedPerson.email}</a>}
+                                <div className="flex items-center gap-3 mt-5">
+                                    {selectedPerson.linkedin && <SocialLink href={selectedPerson.linkedin} label="LinkedIn"><Linkedin size={18} /></SocialLink>}
+                                    {selectedPerson.twitter && <SocialLink href={selectedPerson.twitter} label="Twitter"><Twitter size={18} /></SocialLink>}
+                                    {selectedPerson.instagram && <SocialLink href={selectedPerson.instagram} label="Instagram"><Instagram size={18} /></SocialLink>}
+                                    {selectedPerson.github && <SocialLink href={selectedPerson.github} label="GitHub"><Github size={18} /></SocialLink>}
+                                    {selectedPerson.website && <SocialLink href={selectedPerson.website} label="Website"><Globe size={18} /></SocialLink>}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
         </>
+    );
+}
+
+function SocialLink({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
+    return (
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={label}
+            title={label}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-primary)] text-[var(--text-tertiary)] transition-colors hover:border-amber-500 hover:text-amber-500"
+        >
+            {children}
+        </a>
     );
 }
 

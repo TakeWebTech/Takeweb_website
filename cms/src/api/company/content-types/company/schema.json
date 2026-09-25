@@ -1,0 +1,77 @@
+{
+  "kind": "singleType",
+  "collectionName": "companies",
+  "info": {
+    "singularName": "company",
+    "pluralName": "companies",
+    "displayName": "Company",
+    "description": "Content for the public About page"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "pageTitle": {
+      "type": "string",
+      "required": true
+    },
+    "seoTitle": {
+      "type": "string"
+    },
+    "seoDescription": {
+      "type": "text"
+    },
+    "hero": {
+      "type": "component",
+      "component": "page.page-hero",
+      "required": true
+    },
+    "missionVisionHeading": {
+      "type": "component",
+      "component": "shared.section-heading"
+    },
+    "mission": {
+      "type": "component",
+      "component": "page.icon-card"
+    },
+    "vision": {
+      "type": "component",
+      "component": "page.icon-card"
+    },
+    "valuesHeading": {
+      "type": "component",
+      "component": "shared.section-heading"
+    },
+    "values": {
+      "type": "component",
+      "component": "page.icon-card",
+      "repeatable": true
+    },
+    "leadershipHeading": {
+      "type": "component",
+      "component": "shared.section-heading"
+    },
+    "leaders": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::leadership.leadership"
+    },
+    "journeyHeading": {
+      "type": "component",
+      "component": "shared.section-heading"
+    },
+    "milestones": {
+      "type": "component",
+      "component": "page.timeline-item",
+      "repeatable": true
+    },
+    "cta": {
+      "type": "component",
+      "component": "home.cta-section"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

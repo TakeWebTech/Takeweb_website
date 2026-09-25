@@ -1,4 +1,8 @@
+const { seedCompany } = require("./seed/company");
+
 module.exports = {
   register() {},
-  bootstrap() {},
+  async bootstrap({ strapi }) {
+    await seedCompany(strapi);
+  },
 };

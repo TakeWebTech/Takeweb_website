@@ -10,7 +10,6 @@
     "strapi": "strapi"
   },
   "dependencies": {
-    "@strapi/plugin-users-permissions": "5.23.6",
     "@strapi/strapi": "5.23.6",
     "pg": "8.13.1",
     "react": "^18.0.0",
@@ -25,7 +24,6 @@
     "@strapi/core": "5.23.6",
     "@strapi/upload": "5.23.6"
   },
-  "devDependencies": {},
   "engines": {
     "node": ">=20.0.0 <=22.x.x",
     "npm": ">=6.0.0"

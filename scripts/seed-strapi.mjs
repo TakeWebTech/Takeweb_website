@@ -34,6 +34,49 @@ function loadFallbackSitePages() {
 }
 
 const sitePages = loadFallbackSitePages();
+const aboutPage = sitePages.find((page) => page.slug === "about");
+
+if (!aboutPage) {
+    throw new Error("Could not find the About page fallback content");
+}
+
+const missionVisionSection = aboutPage.sections.find((section) => section.__component === "page.card-grid-section" && section.columns === 2);
+const valuesSection = aboutPage.sections.find((section) => section.__component === "page.card-grid-section" && section.columns === 4);
+const leadershipSection = aboutPage.sections.find((section) => section.__component === "page.people-section");
+const journeySection = aboutPage.sections.find((section) => section.__component === "page.timeline-section");
+const companyCta = aboutPage.sections.find((section) => section.__component === "home.cta-section");
+
+const leadership = leadershipSection.people.map((person, index) => ({
+    name: person.name,
+    slug: person.uid,
+    position: person.role,
+    description: person.bio,
+    email: person.email,
+    linkedin: person.linkedin,
+    twitter: person.twitter,
+    sortOrder: index + 1,
+    isActive: true,
+}));
+
+function companyData(leaderDocumentIds) {
+    return {
+        pageTitle: aboutPage.title,
+        seoTitle: aboutPage.seoTitle,
+        seoDescription: aboutPage.seoDescription,
+        hero: { ...aboutPage.hero, image: undefined },
+        missionVisionHeading: missionVisionSection.heading,
+        mission: missionVisionSection.cards[0],
+        vision: missionVisionSection.cards[1],
+        valuesHeading: valuesSection.heading,
+        values: valuesSection.cards,
+        leadershipHeading: leadershipSection.heading,
+        leaders: leaderDocumentIds,
+        journeyHeading: journeySection.heading,
+        milestones: journeySection.items,
+        cta: companyCta,
+        isActive: true,
+    };
+}
 
 const services = [
     {
@@ -369,48 +412,6 @@ const projects = [
     },
 ];
 
-const jobs = [
-    {
-        title: "Senior Full Stack Engineer",
-        slug: "senior-full-stack-engineer",
-        department: "Engineering",
-        location: "Bangalore",
-        type: "FULL_TIME",
-        minSalary: 35,
-        maxSalary: 55,
-        description: "Build next-generation enterprise platforms using Next.js and Node.js.",
-        requirements: "5+ years of React and Node.js experience\nStrong system design knowledge\nExperience with AWS or GCP",
-        isRemote: true,
-        isActive: true,
-    },
-    {
-        title: "Product Designer",
-        slug: "product-designer",
-        department: "Design",
-        location: "Remote",
-        type: "FULL_TIME",
-        minSalary: 20,
-        maxSalary: 35,
-        description: "Create beautiful, intuitive interfaces for enterprise applications.",
-        requirements: "3+ years of product design experience\nProficiency in Figma\nStrong SaaS portfolio",
-        isRemote: true,
-        isActive: true,
-    },
-    {
-        title: "Cloud Solutions Architect",
-        slug: "cloud-architect",
-        department: "Infrastructure",
-        location: "Mumbai",
-        type: "CONTRACT",
-        minSalary: 40,
-        maxSalary: 60,
-        description: "Help clients migrate, modernize, and scale infrastructure on the cloud.",
-        requirements: "AWS or Azure Solutions Architect certification\nExperience with Kubernetes and Terraform",
-        isRemote: true,
-        isActive: true,
-    },
-];
-
 async function createEntry(collection, data) {
     const res = await fetch(`${STRAPI_URL}/api/${collection}`, {
         method: "POST",
@@ -425,6 +426,8 @@ async function createEntry(collection, data) {
         const message = await res.text();
         throw new Error(`${collection}/${data.slug || data.title}: ${res.status} ${message}`);
     }
+
+    return (await res.json()).data;
 }
 
 async function findEntry(collection, slug) {
@@ -441,20 +444,21 @@ async function findEntry(collection, slug) {
     }
 
     const json = await res.json();
-    return Array.isArray(json.data) && json.data.length > 0;
+    return Array.isArray(json.data) ? json.data[0] || null : null;
 }
 
-async function updateSingle(path, data) {
+async function updateSingle(path, data, overwrite = false) {
     const current = await fetch(`${STRAPI_URL}/api/${path}`, {
         headers: { Authorization: `Bearer ${TOKEN}` },
     });
 
-    if (current.ok && (await current.json()).data) {
+    const currentData = current.ok ? (await current.json()).data : null;
+    if (currentData && !overwrite) {
         console.log(`Kept existing ${path}`);
-        return;
+        return currentData;
     }
 
-    if (current.status !== 404) {
+    if (!current.ok && current.status !== 404) {
         throw new Error(`${path}: ${current.status} ${await current.text()}`);
     }
 
@@ -476,18 +480,23 @@ async function updateSingle(path, data) {
 }
 
 async function seed(collection, rows) {
+    const entries = [];
     for (const row of rows) {
         try {
-            if (row.slug && await findEntry(collection, row.slug)) {
-                console.log(`Kept existing ${collection}: ${row.title}`);
+            const existing = row.slug ? await findEntry(collection, row.slug) : null;
+            if (existing) {
+                console.log(`Kept existing ${collection}: ${row.title || row.name}`);
+                entries.push(existing);
                 continue;
             }
-            await createEntry(collection, row);
-            console.log(`Created ${collection}: ${row.title}`);
+            const created = await createEntry(collection, row);
+            entries.push(created);
+            console.log(`Created ${collection}: ${row.title || row.name}`);
         } catch (error) {
             console.error(error.message);
         }
     }
+    return entries;
 }
 
 await updateSingle("global", global);
@@ -496,3 +505,6 @@ await seed("services", services);
 await seed("blog-posts", blogPosts);
 await seed("projects", projects);
 await seed("site-pages", sitePages);
+const leaders = await seed("leadership-members", leadership);
+const leaderDocumentIds = leaders.map((leader) => leader.documentId).filter(Boolean);
+await updateSingle("company", companyData(leaderDocumentIds), true);
