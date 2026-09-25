@@ -52,8 +52,10 @@ const leadership = leadershipSection.people.map((person, index) => ({
     position: person.role,
     description: person.bio,
     email: person.email,
-    linkedin: person.linkedin,
-    twitter: person.twitter,
+    socialMedia: [
+        person.linkedin && { name: "LinkedIn", icon: "linkedin", href: person.linkedin },
+        person.twitter && { name: "Twitter", icon: "twitter", href: person.twitter },
+    ].filter(Boolean),
     sortOrder: index + 1,
     isActive: true,
 }));

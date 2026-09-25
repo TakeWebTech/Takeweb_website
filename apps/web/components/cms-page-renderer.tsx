@@ -78,11 +78,7 @@ type Person = {
     imageFallback?: string;
     bio?: string;
     email?: string;
-    linkedin?: string;
-    twitter?: string;
-    instagram?: string;
-    github?: string;
-    website?: string;
+    socialMedia?: Array<{ name: string; icon?: string; href?: string }>;
 };
 
 function getIcon(name?: string) {
@@ -345,12 +341,10 @@ export function CmsPageRenderer({ page }: { page: SitePageContent }) {
                                 <p className="text-amber-500 font-medium mb-6">{selectedPerson.role}</p>
                                 <p className="text-[var(--text-tertiary)] mb-6 leading-relaxed">{selectedPerson.bio}</p>
                                 {selectedPerson.email && <a href={`mailto:${selectedPerson.email}`} className="text-amber-500 hover:underline">{selectedPerson.email}</a>}
-                                <div className="flex items-center gap-3 mt-5">
-                                    {selectedPerson.linkedin && <SocialLink href={selectedPerson.linkedin} label="LinkedIn"><Linkedin size={18} /></SocialLink>}
-                                    {selectedPerson.twitter && <SocialLink href={selectedPerson.twitter} label="Twitter"><Twitter size={18} /></SocialLink>}
-                                    {selectedPerson.instagram && <SocialLink href={selectedPerson.instagram} label="Instagram"><Instagram size={18} /></SocialLink>}
-                                    {selectedPerson.github && <SocialLink href={selectedPerson.github} label="GitHub"><Github size={18} /></SocialLink>}
-                                    {selectedPerson.website && <SocialLink href={selectedPerson.website} label="Website"><Globe size={18} /></SocialLink>}
+                                <div className="grid grid-cols-2 gap-3 mt-5">
+                                    {selectedPerson.socialMedia?.map((social) => (
+                                        <SocialTile key={`${social.name}-${social.href}`} social={social} />
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -361,17 +355,21 @@ export function CmsPageRenderer({ page }: { page: SitePageContent }) {
     );
 }
 
-function SocialLink({ href, label, children }: { href: string; label: string; children: React.ReactNode }) {
+function SocialTile({ social }: { social: { name: string; icon?: string; href?: string } }) {
+    if (!social.href || !/^https?:\/\//i.test(social.href)) return null;
+    const socialIcons = { linkedin: Linkedin, twitter: Twitter, instagram: Instagram, github: Github, website: Globe };
+    const Icon = socialIcons[(social.icon || "website").toLowerCase() as keyof typeof socialIcons] || Globe;
+
     return (
         <a
-            href={href}
+            href={social.href}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={label}
-            title={label}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-primary)] text-[var(--text-tertiary)] transition-colors hover:border-amber-500 hover:text-amber-500"
+            aria-label={social.name}
+            className="flex min-h-12 items-center gap-3 rounded-lg border border-[var(--border-primary)] px-3 text-sm font-medium text-[var(--text-tertiary)] transition-colors hover:border-amber-500 hover:text-amber-500"
         >
-            {children}
+            <Icon size={18} />
+            <span>{social.name}</span>
         </a>
     );
 }

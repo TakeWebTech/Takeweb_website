@@ -11,6 +11,9 @@
     "icon": {
       "type": "string",
       "default": "cloud"
+    },
+    "href": {
+      "type": "string"
     }
   }
 }

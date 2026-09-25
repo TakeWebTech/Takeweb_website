@@ -5,8 +5,10 @@ const leaders = [
     position: "Founder & CEO",
     description: "Visionary leader dedicated to transforming enterprise technology through innovation and excellence. Himanshu leads the strategic direction of TakeWeb, ensuring we deliver world-class solutions to our global partners.",
     email: "hello@takeweb.in",
-    linkedin: "https://linkedin.com/in/himanshumathankar",
-    twitter: "https://twitter.com/himanshumathankar",
+    socialMedia: [
+      { name: "LinkedIn", icon: "linkedin", href: "https://linkedin.com/in/himanshumathankar" },
+      { name: "Twitter", icon: "twitter", href: "https://twitter.com/himanshumathankar" },
+    ],
   },
   {
     name: "Rajesh Kumar",
@@ -14,8 +16,10 @@ const leaders = [
     position: "Co-Founder & Advisor",
     description: "Rajesh brings 20+ years of experience in enterprise software and digital transformation. He now serves as a strategic advisor to the team.",
     email: "rajesh@takeweb.in",
-    linkedin: "https://linkedin.com/in/rajeshkumar",
-    twitter: "https://twitter.com/rajeshkumar",
+    socialMedia: [
+      { name: "LinkedIn", icon: "linkedin", href: "https://linkedin.com/in/rajeshkumar" },
+      { name: "Twitter", icon: "twitter", href: "https://twitter.com/rajeshkumar" },
+    ],
   },
   {
     name: "Priya Sharma",
@@ -23,8 +27,10 @@ const leaders = [
     position: "Chief Technology Officer",
     description: "Priya leads TakeWeb's technology strategy and engineering teams. With expertise in cloud architecture, AI/ML, and DevOps, she ensures our solutions are built on solid technical foundations.",
     email: "priya@takeweb.in",
-    linkedin: "https://linkedin.com/in/priyasharma",
-    twitter: "https://twitter.com/priyasharma",
+    socialMedia: [
+      { name: "LinkedIn", icon: "linkedin", href: "https://linkedin.com/in/priyasharma" },
+      { name: "Twitter", icon: "twitter", href: "https://twitter.com/priyasharma" },
+    ],
   },
   {
     name: "Michael Chen",
@@ -32,7 +38,7 @@ const leaders = [
     position: "Chief Financial Officer",
     description: "Michael oversees TakeWeb's financial operations and strategic planning. His background in investment banking and fintech gives him unique insights into growing technology companies sustainably.",
     email: "michael@takeweb.in",
-    linkedin: "https://linkedin.com/in/michaelchen",
+    socialMedia: [{ name: "LinkedIn", icon: "linkedin", href: "https://linkedin.com/in/michaelchen" }],
   },
   {
     name: "Sarah Williams",
@@ -40,7 +46,7 @@ const leaders = [
     position: "Chief Operating Officer",
     description: "Sarah ensures TakeWeb's operations run smoothly across all regions and brings extensive experience in scaling global technology services companies.",
     email: "sarah@takeweb.in",
-    linkedin: "https://linkedin.com/in/sarahwilliams",
+    socialMedia: [{ name: "LinkedIn", icon: "linkedin", href: "https://linkedin.com/in/sarahwilliams" }],
   },
   {
     name: "Amit Patel",
@@ -48,7 +54,7 @@ const leaders = [
     position: "VP of Engineering",
     description: "Amit leads engineering teams and ensures technical excellence across all projects with deep expertise in enterprise systems and agile delivery.",
     email: "amit@takeweb.in",
-    linkedin: "https://linkedin.com/in/amitpatel",
+    socialMedia: [{ name: "LinkedIn", icon: "linkedin", href: "https://linkedin.com/in/amitpatel" }],
   },
   {
     name: "Jennifer Lee",
@@ -56,7 +62,7 @@ const leaders = [
     position: "VP of Sales & Partnerships",
     description: "Jennifer drives TakeWeb's global sales strategy and partnership ecosystem across enterprise clients and technology partners.",
     email: "jennifer@takeweb.in",
-    linkedin: "https://linkedin.com/in/jenniferlee",
+    socialMedia: [{ name: "LinkedIn", icon: "linkedin", href: "https://linkedin.com/in/jenniferlee" }],
   },
 ];
 
@@ -102,8 +108,6 @@ const company = {
 
 async function seedCompany(strapi) {
   const companyDocuments = strapi.documents("api::company.company");
-  if (await companyDocuments.findFirst()) return;
-
   const leadershipDocuments = strapi.documents("api::leadership.leadership");
   const leaderDocumentIds = [];
 
@@ -113,9 +117,16 @@ async function seedCompany(strapi) {
       record = await leadershipDocuments.create({
         data: { ...leader, sortOrder: index + 1, isActive: true },
       });
+    } else if (!record.socialMedia?.length) {
+      record = await leadershipDocuments.update({
+        documentId: record.documentId,
+        data: { socialMedia: leader.socialMedia },
+      });
     }
     leaderDocumentIds.push(record.documentId);
   }
+
+  if (await companyDocuments.findFirst()) return;
 
   await companyDocuments.create({
     data: { ...company, leaders: leaderDocumentIds },

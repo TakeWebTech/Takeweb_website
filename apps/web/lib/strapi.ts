@@ -268,11 +268,7 @@ interface LeadershipContent {
     photo?: StrapiMedia;
     description?: string;
     email?: string;
-    linkedin?: string;
-    twitter?: string;
-    instagram?: string;
-    github?: string;
-    website?: string;
+    socialMedia?: Array<{ name: string; icon?: string; href?: string }>;
     sortOrder?: number;
     isActive?: boolean;
 }
@@ -586,7 +582,7 @@ export async function getSitePage(slug: string) {
 
 export async function getCompanyPage(): Promise<SitePageContent | null> {
     const company = await strapiSingle<CompanyContent>(
-        "company?populate[hero][populate]=*&populate[missionVisionHeading]=*&populate[mission]=*&populate[vision]=*&populate[valuesHeading]=*&populate[values]=*&populate[leadershipHeading]=*&populate[leaders][populate][photo]=*&populate[journeyHeading]=*&populate[milestones]=*&populate[cta][populate]=*",
+        "company?populate[hero][populate]=*&populate[missionVisionHeading]=*&populate[mission]=*&populate[vision]=*&populate[valuesHeading]=*&populate[values]=*&populate[leadershipHeading]=*&populate[leaders][populate]=*&populate[journeyHeading]=*&populate[milestones]=*&populate[cta][populate]=*",
         60,
     );
 
@@ -605,11 +601,7 @@ export async function getCompanyPage(): Promise<SitePageContent | null> {
             imageFallback: "/founder.jpg",
             bio: leader.description,
             email: leader.email,
-            linkedin: leader.linkedin,
-            twitter: leader.twitter,
-            instagram: leader.instagram,
-            github: leader.github,
-            website: leader.website,
+            socialMedia: leader.socialMedia || [],
         }));
 
     const sections: Array<Record<string, unknown>> = [

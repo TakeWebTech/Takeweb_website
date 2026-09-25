@@ -35,20 +35,10 @@
     "email": {
       "type": "email"
     },
-    "linkedin": {
-      "type": "string"
-    },
-    "twitter": {
-      "type": "string"
-    },
-    "instagram": {
-      "type": "string"
-    },
-    "github": {
-      "type": "string"
-    },
-    "website": {
-      "type": "string"
+    "socialMedia": {
+      "type": "component",
+      "component": "home.partner-tile",
+      "repeatable": true
     },
     "sortOrder": {
       "type": "integer",
