@@ -209,6 +209,45 @@ export interface GlobalMenu {
     featured?: { name: string; desc?: string; href: string };
 }
 
+export interface GlobalNavigationLink {
+    name: string;
+    href: string;
+    description?: string;
+    openNewTab?: boolean;
+    isActive?: boolean;
+    isFeatured?: boolean;
+}
+
+export interface GlobalMenuColumn {
+    title: string;
+    isActive?: boolean;
+    links?: GlobalNavigationLink[];
+}
+
+export interface GlobalNavigationMenu {
+    key: string;
+    label: string;
+    sortOrder?: number;
+    menuType: "direct-link" | "simple-dropdown" | "mega-menu";
+    href?: string;
+    openNewTab?: boolean;
+    isActive?: boolean;
+    megaMenuLayout?: "featured-panel" | "columns-only";
+    desktopColumns?: number;
+    featuredLabel?: string;
+    featuredButtonLabel?: string;
+    directLinks?: GlobalNavigationLink[];
+    columns?: GlobalMenuColumn[];
+}
+
+export interface GlobalFooterSection {
+    key: string;
+    title: string;
+    sortOrder?: number;
+    isActive?: boolean;
+    links?: GlobalNavigationLink[];
+}
+
 export interface GlobalContent {
     siteName: string;
     companyName?: string;
@@ -220,8 +259,11 @@ export interface GlobalContent {
     primaryCtaLabel?: string;
     primaryCtaHref?: string;
     navigation?: Record<string, GlobalMenu>;
+    navigationMenus?: GlobalNavigationMenu[];
     footerLinks?: Record<string, GlobalLink[]>;
+    footerSections?: GlobalFooterSection[];
     socialLinks?: GlobalLink[];
+    socialMedia?: Array<{ name: string; icon?: string; href: string }>;
     copyrightText?: string;
 }
 
@@ -508,16 +550,86 @@ export const defaultGlobalContent: GlobalContent = {
 };
 
 export async function getGlobalContent() {
-    const global = await strapiSingle<GlobalContent>("global?populate=*", 1800);
-    if (!global) return defaultGlobalContent;
+    const global = await strapiSingle<GlobalContent>(
+        "global?populate[logo]=true&populate[navigationMenus][populate][directLinks]=true&populate[navigationMenus][populate][columns][populate][links]=true&populate[footerSections][populate][links]=true&populate[socialMedia]=true",
+        1800,
+    );
+    const source = global || defaultGlobalContent;
 
     return {
         ...defaultGlobalContent,
-        ...global,
-        logo: getMediaUrl(global.logo) || "/logo.png",
-        navigation: global.navigation || defaultGlobalContent.navigation,
-        footerLinks: global.footerLinks || defaultGlobalContent.footerLinks,
-        socialLinks: global.socialLinks || defaultGlobalContent.socialLinks,
+        ...source,
+        logo: getMediaUrl(source.logo) || "/logo.png",
+        navigation: source.navigation || defaultGlobalContent.navigation,
+        navigationMenus: source.navigationMenus?.length
+            ? source.navigationMenus
+            : navigationMenusFromLegacy(source.navigation || defaultGlobalContent.navigation || {}),
+        footerLinks: source.footerLinks || defaultGlobalContent.footerLinks,
+        footerSections: source.footerSections?.length
+            ? source.footerSections
+            : footerSectionsFromLegacy(source.footerLinks || defaultGlobalContent.footerLinks || {}),
+        socialLinks: source.socialLinks || defaultGlobalContent.socialLinks,
+        socialMedia: source.socialMedia?.length
+            ? source.socialMedia
+            : (source.socialLinks || defaultGlobalContent.socialLinks || []).map((social) => ({
+                ...social,
+                icon: social.name.toLowerCase(),
+            })),
+    };
+}
+
+function navigationMenusFromLegacy(navigation: Record<string, GlobalMenu>): GlobalNavigationMenu[] {
+    const preferredOrder = ["products", "solutions", "services", "industries", "resources", "company"];
+    const menus: GlobalNavigationMenu[] = Object.entries(navigation)
+        .sort(([left], [right]) => menuOrder(left, preferredOrder) - menuOrder(right, preferredOrder))
+        .map(([key, menu], index) => ({
+        key,
+        label: menu.title,
+        sortOrder: index + 1,
+        menuType: menu.sections?.length ? "mega-menu" as const : menu.items?.length ? "simple-dropdown" as const : "direct-link" as const,
+        isActive: true,
+        megaMenuLayout: key === "services" || !menu.featured ? "columns-only" as const : "featured-panel" as const,
+        desktopColumns: Math.min(5, Math.max(1, menu.sections?.length || 2)),
+        featuredLabel: "Featured",
+        featuredButtonLabel: "Explore",
+        directLinks: (menu.items || []).map((link) => legacyLink(link, menu.featured)),
+        columns: (menu.sections || []).map((section) => ({
+            title: section.title,
+            isActive: true,
+            links: section.items.map((link) => legacyLink(link, menu.featured)),
+        })),
+        }));
+
+    menus.push({ key: "contact", label: "Contact", sortOrder: menus.length + 1, menuType: "direct-link", href: "/contact", isActive: true });
+    return menus;
+}
+
+function footerSectionsFromLegacy(footerLinks: Record<string, GlobalLink[]>): GlobalFooterSection[] {
+    const preferredOrder = ["services", "solutions", "company", "legal"];
+    return Object.entries(footerLinks)
+        .sort(([left], [right]) => menuOrder(left, preferredOrder) - menuOrder(right, preferredOrder))
+        .map(([key, links], index) => ({
+        key,
+        title: key.charAt(0).toUpperCase() + key.slice(1),
+        sortOrder: index + 1,
+        isActive: true,
+        links: links.map((link) => legacyLink(link)),
+        }));
+}
+
+function menuOrder(key: string, preferredOrder: string[]) {
+    const index = preferredOrder.indexOf(key);
+    return index === -1 ? preferredOrder.length : index;
+}
+
+function legacyLink(link: GlobalLink, featured?: GlobalLink): GlobalNavigationLink {
+    return {
+        name: link.name,
+        href: link.href,
+        description: link.desc,
+        openNewTab: /^https?:\/\//i.test(link.href),
+        isActive: true,
+        isFeatured: Boolean(featured && (featured.href === link.href || featured.name === link.name)),
     };
 }
 

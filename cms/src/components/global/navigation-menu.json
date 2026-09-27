@@ -1,0 +1,67 @@
+{
+  "collectionName": "components_global_navigation_menus",
+  "info": {
+    "displayName": "Navigation Menu",
+    "description": "Top-level website navigation item"
+  },
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true
+    },
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "menuType": {
+      "type": "enumeration",
+      "enum": ["direct-link", "simple-dropdown", "mega-menu"],
+      "required": true,
+      "default": "direct-link"
+    },
+    "href": {
+      "type": "string"
+    },
+    "openNewTab": {
+      "type": "boolean",
+      "default": false
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "megaMenuLayout": {
+      "type": "enumeration",
+      "enum": ["featured-panel", "columns-only"],
+      "default": "featured-panel"
+    },
+    "desktopColumns": {
+      "type": "integer",
+      "min": 1,
+      "max": 5,
+      "default": 2
+    },
+    "featuredLabel": {
+      "type": "string",
+      "default": "Featured"
+    },
+    "featuredButtonLabel": {
+      "type": "string",
+      "default": "Explore"
+    },
+    "directLinks": {
+      "type": "component",
+      "component": "shared.navigation-link",
+      "repeatable": true
+    },
+    "columns": {
+      "type": "component",
+      "component": "global.menu-column",
+      "repeatable": true
+    }
+  }
+}

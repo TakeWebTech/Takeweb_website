@@ -1,0 +1,30 @@
+{
+  "collectionName": "components_global_footer_sections",
+  "info": {
+    "displayName": "Footer Section",
+    "description": "A titled group of footer links"
+  },
+  "attributes": {
+    "key": {
+      "type": "string",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "links": {
+      "type": "component",
+      "component": "shared.navigation-link",
+      "repeatable": true
+    }
+  }
+}

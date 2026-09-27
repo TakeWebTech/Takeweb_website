@@ -47,11 +47,26 @@
     "navigation": {
       "type": "json"
     },
+    "navigationMenus": {
+      "type": "component",
+      "component": "global.navigation-menu",
+      "repeatable": true
+    },
     "footerLinks": {
       "type": "json"
     },
+    "footerSections": {
+      "type": "component",
+      "component": "global.footer-section",
+      "repeatable": true
+    },
     "socialLinks": {
       "type": "json"
+    },
+    "socialMedia": {
+      "type": "component",
+      "component": "shared.social-media",
+      "repeatable": true
     },
     "copyrightText": {
       "type": "string"

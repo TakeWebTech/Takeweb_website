@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_global_menu_columns",
+  "info": {
+    "displayName": "Menu Column",
+    "description": "A titled column inside a mega menu"
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "links": {
+      "type": "component",
+      "component": "shared.navigation-link",
+      "repeatable": true
+    }
+  }
+}

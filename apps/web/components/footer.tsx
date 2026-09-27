@@ -1,13 +1,22 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, Phone, MapPin, Linkedin, Twitter, Github, Youtube } from "lucide-react";
+import { Mail, Phone, MapPin, Linkedin, Twitter, Github, Youtube, Instagram, Globe } from "lucide-react";
 import type { GlobalContent } from "@/lib/strapi";
 
-const socialIconMap = { LinkedIn: Linkedin, Twitter: Twitter, GitHub: Github, YouTube: Youtube };
+const socialIconMap = {
+    linkedin: Linkedin,
+    twitter: Twitter,
+    github: Github,
+    youtube: Youtube,
+    instagram: Instagram,
+    globe: Globe,
+};
 
 export function Footer({ global }: { global: GlobalContent }) {
-    const footerLinks = global.footerLinks || {};
-    const socialLinks = global.socialLinks || [];
+    const footerSections = (global.footerSections || [])
+        .filter((section) => section.isActive !== false)
+        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    const socialLinks = global.socialMedia || [];
     const logo = typeof global.logo === "string" && global.logo ? global.logo : "/logo.png";
 
     return (
@@ -57,81 +66,27 @@ export function Footer({ global }: { global: GlobalContent }) {
                         </div>
                     </div>
 
-                    {/* Services */}
-                    <div>
-                        <h4 className="font-semibold text-[var(--text-primary)] mb-4 text-sm">
-                            Services
-                        </h4>
-                        <ul className="space-y-3">
-                            {footerLinks.services?.map((link) => (
-                                <li key={link.name}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-                                    >
-                                        {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Solutions */}
-                    <div>
-                        <h4 className="font-semibold text-[var(--text-primary)] mb-4 text-sm">
-                            Solutions
-                        </h4>
-                        <ul className="space-y-3">
-                            {footerLinks.solutions?.map((link) => (
-                                <li key={link.name}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-                                    >
-                                        {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Company */}
-                    <div>
-                        <h4 className="font-semibold text-[var(--text-primary)] mb-4 text-sm">
-                            Company
-                        </h4>
-                        <ul className="space-y-3">
-                            {footerLinks.company?.map((link) => (
-                                <li key={link.name}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-                                    >
-                                        {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Legal */}
-                    <div>
-                        <h4 className="font-semibold text-[var(--text-primary)] mb-4 text-sm">
-                            Legal
-                        </h4>
-                        <ul className="space-y-3">
-                            {footerLinks.legal?.map((link) => (
-                                <li key={link.name}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-                                    >
-                                        {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    {footerSections.map((section) => (
+                        <div key={section.key}>
+                            <h4 className="font-semibold text-[var(--text-primary)] mb-4 text-sm">
+                                {section.title}
+                            </h4>
+                            <ul className="space-y-3">
+                                {(section.links || []).filter((link) => link.isActive !== false).map((link) => (
+                                    <li key={`${link.name}-${link.href}`}>
+                                        <Link
+                                            href={link.href}
+                                            target={link.openNewTab ? "_blank" : undefined}
+                                            rel={link.openNewTab ? "noopener noreferrer" : undefined}
+                                            className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                                        >
+                                            {link.name}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
                 </div>
             </div>
 
@@ -146,7 +101,7 @@ export function Footer({ global }: { global: GlobalContent }) {
                         {/* Social Links */}
                         <div className="flex items-center gap-3">
                             {socialLinks.map((social) => {
-                                const Icon = socialIconMap[social.name as keyof typeof socialIconMap] || Linkedin;
+                                const Icon = socialIconMap[social.icon?.toLowerCase() as keyof typeof socialIconMap] || Globe;
                                 return (
                                     <a
                                         key={social.name}
